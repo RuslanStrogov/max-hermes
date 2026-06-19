@@ -157,3 +157,83 @@ class TestMessageConverter:
         result = MessageConverter.build_inline_keyboard(buttons)
         assert result["type"] == "inline_keyboard"
         assert len(result["payload"]["buttons"]) == 2
+
+    def test_voice_message_to_hermes(self):
+        """Test that audio attachment is converted to voice message text."""
+        from src.models import MAXAttachment, MAXAttachmentPayload
+
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_CREATED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=67890, type="dialog"),
+                body=MAXMessageBody(
+                    text="",
+                    mid="msg_voice_001",
+                    attachments=[
+                        MAXAttachment(
+                            type="audio",
+                            payload=MAXAttachmentPayload(
+                                url="https://cdn.max.ru/audio/abc123.ogg",
+                                token="audio_token_xyz",
+                            ),
+                        )
+                    ],
+                ),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "🎤 [Голосовое сообщение]" in result["message"]
+        assert "https://cdn.max.ru/audio/abc123.ogg" in result["message"]
+        # Check attachments info
+        assert len(result["attachments"]) == 1
+        assert result["attachments"][0]["type"] == "audio"
+
+    def test_voice_message_with_caption(self):
+        """Test voice message with text caption."""
+        from src.models import MAXAttachment, MAXAttachmentPayload
+
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_CREATED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=67890, type="dialog"),
+                body=MAXMessageBody(
+                    text="Слушай это",
+                    mid="msg_voice_002",
+                    attachments=[
+                        MAXAttachment(
+                            type="audio",
+                            payload=MAXAttachmentPayload(
+                                url="https://cdn.max.ru/audio/def456.ogg",
+                                token="audio_token_abc",
+                            ),
+                        )
+                    ],
+                ),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "Слушай это" in result["message"]
+        assert "🎤 [Голосовое сообщение]" in result["message"]
+
+    def test_format_attachments_audio(self):
+        """Test _format_attachments for audio type."""
+        attachments = [
+            {
+                "type": "audio",
+                "payload": {
+                    "url": "https://cdn.max.ru/audio/test.ogg",
+                    "token": "test_audio_token_12345",
+                },
+            }
+        ]
+        result = MessageConverter._format_attachments(attachments)
+        assert "🎤 [Голосовое сообщение]" in result
+        assert "https://cdn.max.ru/audio/test.ogg" in result
