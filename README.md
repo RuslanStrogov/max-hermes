@@ -352,6 +352,12 @@ MIT License. См. [LICENSE](LICENSE).
 
 ---
 
+## 🔗 Связанные проекты
+
+| Проект | Описание |
+|--------|----------|
+| [MAX Hermes Plugin](https://github.com/RuslanStrogov/max-hermes-plugin) | Нативный платформенный плагин для Hermes Gateway. Прямая интеграция MAX без моста. |
+
 <div align="center">
 
   <sub>🎨 Designed by <a href="https://br-design.ru/">BR-DESIGN</a></sub>
