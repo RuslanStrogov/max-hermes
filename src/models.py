@@ -125,3 +125,71 @@ class SubscriptionResponse(BaseModel):
     id: Optional[str] = None
     url: Optional[str] = None
     ok: bool = True
+
+
+# ─── Content Models ─────────────────────────────────────────────────────────────
+
+class ContentType(str, Enum):
+    """Types of downloadable content from MAX attachments."""
+    IMAGE = "image"
+    VIDEO = "video"
+    AUDIO = "audio"
+    FILE = "file"
+    VOICE = "voice"
+    CONTACT = "contact"
+    LOCATION = "location"
+    STICKER = "sticker"
+
+
+class ContentItem(BaseModel):
+    """A single content item downloaded from MAX attachment.
+
+    Passed to Hermes agent so it can read/process the actual file.
+    """
+    content_type: ContentType
+    local_path: str                    # absolute path to downloaded file
+    original_url: Optional[str] = None # MAX CDN URL
+    file_name: Optional[str] = None    # original filename if available
+    mime_type: Optional[str] = None    # e.g. "image/png", "application/pdf"
+    size_bytes: Optional[int] = None   # file size on disk
+
+    class Config:
+        extra = "allow"
+
+
+class AttachmentToken(BaseModel):
+    """Token for downloading attachments from MAX CDN.
+
+    MAX requires ?token=... or Authorization header to download.
+    """
+    token: Optional[str] = None
+    access_token: Optional[str] = None
+
+    class Config:
+        extra = "allow"
+
+    def get_effective_token(self) -> Optional[str]:
+        return self.token or self.access_token
+
+
+class OutgoingAttachment(BaseModel):
+    """Attachment for sending messages to MAX.
+
+    After uploading a file via /uploads, the response contains
+    an attachment_id used to build the message.
+    """
+    type: str  # image, video, audio, file, contact, sticker
+    attachment_id: Optional[str] = None  # from /uploads response
+    url: Optional[str] = None
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+    class Config:
+        extra = "allow"
+
+
+class UploadResponse(BaseModel):
+    """Response from POST /uploads."""
+    attachment_id: Optional[str] = None
+    url: Optional[str] = None
+    ok: bool = True
+    error: Optional[str] = None

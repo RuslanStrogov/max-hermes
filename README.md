@@ -301,6 +301,16 @@ max-hermes/
 | Docker / Docker Compose | ✅ |
 | Health check endpoint | ✅ |
 | Логирование в journald / файл | ✅ |
+| Обработка всех типов событий MAX API | ✅ |
+| Скачивание вложений (изображения, видео, аудио, файлы) | ✅ |
+| Отправка изображений через upload API | ✅ |
+| Редактирование сообщений (PUT /messages/{id}) | ✅ |
+| Удаление сообщений (DELETE /messages/{id}) | ✅ |
+| Long Polling (GET /updates) | ✅ |
+| Webhook управление (POST/GET/DELETE /subscriptions) | ✅ |
+| Автодеплой через GitHub Actions | ✅ |
+| CI (тесты на Python 3.11, 3.12) | ✅ |
+| Автоматические релизы (GitHub Release) | ✅ |
 
 ### Что можно добавить (roadmap)
 
@@ -338,7 +348,34 @@ max-hermes/
 | Group chats | ✅ | ✅ |
 | Channels | ✅ | ✅ |
 
-## Тестирование
+## Разработка
+
+### Git flow
+
+- `main` — стабильная ветка, релизы
+- `develop` — ветка разработки, интеграция изменений
+- Релизы помечаются тегами `v*` (например `v1.0.0`)
+- При пуше в `main` или тег `v*` автоматически деплоится на сервер
+
+### CI/CD
+
+| Workflow | Триггер | Описание |
+|----------|---------|----------|
+| CI (test) | push/PR в `main`, `develop` | Запуск тестов на Python 3.11, 3.12 + линтер |
+| Deploy | push в `main` или тег `v*` | Автодеплой на сервер через SSH |
+| Release | тег `v*` | Автоматическое создание GitHub Release |
+
+### Настройка автодеплоя
+
+В настройках репозитория GitHub → Settings → Secrets → Actions добавьте:
+
+| Secret | Описание |
+|--------|----------|
+| `DEPLOY_HOST` | IP-адрес или домен сервера |
+| `DEPLOY_USER` | Пользователь SSH |
+| `DEPLOY_SSH_KEY` | Приватный SSH-ключ |
+
+### Запуск тестов
 
 ```bash
 source venv/bin/activate

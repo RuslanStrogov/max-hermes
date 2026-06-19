@@ -12,7 +12,7 @@ from src.config import Config
 from src.converter import MessageConverter
 from src.hermes_client import HermesClient, HermesClientError
 from src.max_client import MAXClient, MAXApiError
-from src.models import MAXUpdate, UpdateType
+from src.models import MAXUpdate, MAXAttachment
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +28,6 @@ class WebhookServer:
         self._app = web.Application()
         self._app["hermes_client"] = hermes_client
         self._app["max_client"] = max_client
-        self._builtin_commands = {
-            "cmd_list": self._cmd_list,
-        }
         self._setup_routes()
 
     def _setup_routes(self) -> None:
@@ -105,14 +102,6 @@ class WebhookServer:
                 )
                 return web.json_response({"ok": True, "ignored": True})
 
-        # ── Built-in command handling ─────────────────────────────────────
-        # Handle bot commands locally before forwarding to Hermes
-        if update.update_type == UpdateType.MESSAGE_CALLBACK:
-            callback_data = update.callback or {}
-            payload = callback_data.get("payload", "")
-            if payload in self._builtin_commands:
-                return await self._handle_builtin_command(update, payload)
-
         # ── Convert and forward to Hermes ────────────────────────────────
         hermes_payload = self._converter.max_update_to_hermes_message(update)
 
@@ -125,6 +114,13 @@ class WebhookServer:
             if update.message:
                 recipient = update.message.recipient
                 await self._max.send_chat_action(chat_id=recipient.chat_id, action="typing_on")
+
+            # Download attachments if present
+            content_items = []
+            if update.message and update.message.body.attachments:
+                content_items = await self._download_attachments(update.message.body.attachments)
+                if content_items:
+                    hermes_payload["content_items"] = content_items
 
             # Send to Hermes webhook and get agent response
             hermes_response = await self._hermes.send_message(**hermes_payload)
@@ -168,6 +164,57 @@ class WebhookServer:
         except Exception as e:
             logger.exception("Unexpected error processing update: %s", e)
             return web.json_response({"ok": True, "error": str(e)})
+
+    async def _download_attachments(
+        self, attachments: list[MAXAttachment]
+    ) -> list[dict[str, Any]]:
+        """Download media attachments from MAX CDN and return local paths."""
+        import os
+        import tempfile
+
+        content_items = []
+        tmp_dir = tempfile.mkdtemp(prefix="max_attachments_")
+
+        for att in attachments:
+            if not att.is_media and not att.is_file:
+                continue
+            if not att.payload.url:
+                continue
+
+            try:
+                token = att.payload.get_effective_token() if hasattr(att.payload, 'get_effective_token') else att.payload.token
+                data = await self._max.download_attachment(att.payload.url, token=token)
+
+                # Determine filename
+                if att.is_image:
+                    ext = ".png"
+                    ctype = "image"
+                elif att.is_media and att.type == "video":
+                    ext = ".mp4"
+                    ctype = "video"
+                elif att.is_media and att.type == "audio":
+                    ext = ".ogg"
+                    ctype = "audio"
+                else:
+                    ext = ".bin"
+                    ctype = "file"
+
+                dest = os.path.join(tmp_dir, f"{att.type}_{id(att)}{ext}")
+                with open(dest, "wb") as f:
+                    f.write(data)
+
+                content_items.append({
+                    "content_type": ctype,
+                    "local_path": dest,
+                    "original_url": att.payload.url,
+                    "mime_type": f"{ctype}/{ext[1:]}",
+                    "size_bytes": len(data),
+                })
+                logger.info("Downloaded attachment: %s -> %s (%d bytes)", att.type, dest, len(data))
+            except Exception as e:
+                logger.warning("Failed to download attachment %s: %s", att.type, e)
+
+        return content_items
 
     # ── Auth ───────────────────────────────────────────────────────────────
 
