@@ -64,12 +64,79 @@ class TestMessageConverter:
         assert "btn_1_pressed" in result["message"]
 
     def test_unsupported_update_type(self):
+        # All known update types are now supported.
+        # Test that an unknown/unhandled type returns None.
+        # Since UpdateType enum covers all known types, we test
+        # that CHAT_CREATED is now handled (not None).
         update = MAXUpdate(
             update_type=UpdateType.CHAT_CREATED,
             timestamp=1737500130100,
         )
         result = MessageConverter.max_update_to_hermes_message(update)
-        assert result is None
+        assert result is not None
+        assert result["message"] == "[Чат создан]"
+        assert result["platform"] == "max"
+
+    def test_message_edited_to_hermes(self):
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_EDITED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=67890, type="chat"),
+                body=MAXMessageBody(text="Отредактированный текст", mid="msg_789"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "[Отредактировано]" in result["message"]
+        assert "Отредактированный текст" in result["message"]
+
+    def test_message_removed_to_hermes(self):
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_REMOVED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=67890, type="chat"),
+                body=MAXMessageBody(mid="msg_deleted"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert result["message"] == "[Сообщение удалено]"
+
+    def test_bot_added_to_hermes(self):
+        update = MAXUpdate(
+            update_type=UpdateType.BOT_ADDED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=67890, type="chat"),
+                body=MAXMessageBody(mid="msg_001"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert result["message"] == "[Бот добавлен в чат]"
+
+    def test_bot_removed_to_hermes(self):
+        update = MAXUpdate(
+            update_type=UpdateType.BOT_REMOVED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=67890, type="chat"),
+                body=MAXMessageBody(mid="msg_002"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert result["message"] == "[Бот удалён из чата]"
 
     def test_hermes_response_to_max(self):
         response = {"message": "Ответ от бота"}

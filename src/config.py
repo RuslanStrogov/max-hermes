@@ -56,6 +56,9 @@ class Config:
     log_level: str = "INFO"
     log_file: str = "/var/log/max-bridge/bridge.log"
 
+    # Content / attachments
+    download_dir: str = "/tmp/max-bridge/downloads"
+
     # Access control
     allowed_users: set[int] = field(default_factory=set)
 
@@ -80,6 +83,7 @@ class Config:
             bridge_secret=os.getenv("BRIDGE_SECRET", "max-bridge-secret").strip(),
             log_level=os.getenv("LOG_LEVEL", "INFO").strip(),
             log_file=os.getenv("LOG_FILE", "/var/log/max-bridge/bridge.log").strip(),
+            download_dir=os.getenv("DOWNLOAD_DIR", "/tmp/max-bridge/downloads").strip(),
             allowed_users=allowed_users,
         )
 

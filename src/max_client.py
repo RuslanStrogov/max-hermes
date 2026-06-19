@@ -241,3 +241,95 @@ class MAXClient:
 
         async with session.post(url, data=data) as resp:
             return await resp.json(content_type=None)
+
+    async def upload_file(
+        self,
+        file_data: bytes,
+        file_name: str = "file",
+        content_type: str = "application/octet-stream",
+    ) -> dict[str, Any]:
+        """POST /uploads — upload a generic file.
+
+        Returns dict with attachment_id on success.
+        """
+        session = await self._get_session()
+        url = f"{self._base_url}/uploads"
+
+        data = aiohttp.FormData()
+        data.add_field("file", file_data, filename=file_name, content_type=content_type)
+
+        logger.info("Uploading file: %s (%d bytes)", file_name, len(file_data))
+
+        async with session.post(url, data=data) as resp:
+            body = await resp.json(content_type=None)
+            if resp.status >= 400:
+                code = body.get("code", "unknown")
+                message = body.get("message", "Unknown error")
+                raise MAXApiError(code, message, resp.status)
+            logger.info("Upload response: %s", body)
+            return body
+
+    # ── Download attachments ────────────────────────────────────────────────
+
+    async def download_attachment(
+        self,
+        url: str,
+        token: Optional[str] = None,
+    ) -> bytes:
+        """Download an attachment from MAX CDN.
+
+        Args:
+            url: The attachment URL from MAX API payload.
+            token: Optional access token for authenticated download.
+
+        Returns:
+            Raw bytes of the downloaded file.
+        """
+        session = await self._get_session()
+
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        logger.debug("Downloading attachment: %s", url[:100])
+
+        async with session.get(url, headers=headers) as resp:
+            if resp.status >= 400:
+                body = await resp.text()
+                raise MAXApiError(
+                    "download_failed",
+                    f"HTTP {resp.status}: {body[:200]}",
+                    resp.status,
+                )
+            data = await resp.read()
+            logger.info("Downloaded attachment: %s (%d bytes)", url[:80], len(data))
+            return data
+
+    async def download_attachment_to_file(
+        self,
+        url: str,
+        dest_path: str,
+        token: Optional[str] = None,
+    ) -> str:
+        """Download an attachment and save to a local file.
+
+        Args:
+            url: The attachment URL.
+            dest_path: Local file path to save to.
+            token: Optional access token.
+
+        Returns:
+            Absolute path to the saved file.
+        """
+        import os
+
+        data = await self.download_attachment(url, token=token)
+
+        dest = os.path.abspath(dest_path)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+
+        with open(dest, "wb") as f:
+            f.write(data)
+
+        logger.info("Saved attachment to: %s (%d bytes)", dest, len(data))
+        return dest
