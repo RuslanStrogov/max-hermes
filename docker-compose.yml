@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  max-bridge:
+    build: .
+    container_name: max-bridge
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/var/log/max-bridge
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - hermes-net
+
+networks:
+  hermes-net:
+    external: true

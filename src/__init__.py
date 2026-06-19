@@ -1,0 +1,1 @@
+"""MAX-Hermes Bridge package."""
