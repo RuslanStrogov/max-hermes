@@ -84,19 +84,6 @@ class HermesClient:
 
             if proc.returncode != 0:
                 logger.error("Hermes exit code %d: %s", proc.returncode, stderr_text[:500])
-                logger.error("Hermes STDOUT: %s", stdout_text[:500])
-                logger.error("Hermes STDERR: %s", stderr_text[:500])
-                try:
-                    import tempfile, os
-                    debug_path = f"/tmp/hermes_debug_{os.getpid()}.log"
-                    with open(debug_path, 'w') as f:
-                        f.write(f"Command: {' '.join(shlex.quote(c) for c in cmd)}\n")
-                        f.write(f"Exit code: {proc.returncode}\n")
-                        f.write(f"STDOUT:\n{stdout_text}\n")
-                        f.write(f"STDERR:\n{stderr_text}\n")
-                    logger.error("Hermes debug written to %s", debug_path)
-                except Exception as dbg_err:
-                    logger.error("Failed to write debug file: %s", dbg_err)
                 raise HermesClientError(f"Hermes exited with code {proc.returncode}: {stderr_text[:200]}")
 
             if stderr_text:
