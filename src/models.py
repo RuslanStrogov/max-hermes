@@ -48,12 +48,43 @@ class MAXRecipient(BaseModel):
         extra = "allow"
 
 
+class MAXAttachmentPayload(BaseModel):
+    """Attachment payload — contains URL and access token."""
+    url: Optional[str] = None
+    token: Optional[str] = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+    class Config:
+        extra = "allow"
+
+
+class MAXAttachment(BaseModel):
+    """Single attachment from MAX message."""
+    type: str = ""  # image, video, audio, file, contact, location, inline_keyboard
+    payload: MAXAttachmentPayload = Field(default_factory=MAXAttachmentPayload)
+
+    class Config:
+        extra = "allow"
+
+    @property
+    def is_media(self) -> bool:
+        return self.type in ("image", "video", "audio")
+
+    @property
+    def is_file(self) -> bool:
+        return self.type == "file"
+
+    @property
+    def is_image(self) -> bool:
+        return self.type == "image"
+
+
 class MAXMessageBody(BaseModel):
     """Message body."""
     text: Optional[str] = None
     mid: Optional[str] = None  # message ID (string!)
     seq: Optional[int] = None
-    attachments: list[dict[str, Any]] = Field(default_factory=list)
+    attachments: list[MAXAttachment] = Field(default_factory=list)
 
     class Config:
         extra = "allow"

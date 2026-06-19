@@ -2,6 +2,8 @@
 
 Мост между [MAX Bot API](https://dev.max.ru) и [Hermes Agent](https://hermes-agent.nousresearch.com) — позволяет подключить бота в мессенджере MAX к AI-агенту Hermes.
 
+> **Хотите интеграцию уровня Hermes (send_message, cron, sessions)?** Используйте [MAX Hermes Plugin](https://github.com/RuslanStrogov/max-hermes-plugin) — нативный платформенный адаптер для Hermes Gateway.
+
 ## Архитектура
 
 ```

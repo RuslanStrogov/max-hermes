@@ -1,11 +1,11 @@
 #!/bin/bash
 # MAX-Hermes Bridge setup script
 # Usage: sudo bash scripts/setup.sh [user] [project_dir]
-# Default: user=ruslan, project_dir=/opt/max-hermes
+# Default: user=max-bridge, project_dir=/opt/max-hermes
 
 set -euo pipefail
 
-SERVICE_USER="${1:-ruslan}"
+SERVICE_USER="${1:-max-bridge}"
 PROJECT_DIR="${2:-/opt/max-hermes}"
 CONFIG_DIR="/etc/max-bridge"
 LOG_DIR="/var/log/max-bridge"
@@ -58,7 +58,7 @@ fi
 
 # 6. Install systemd service
 echo "[6/7] Installing systemd service..."
-sed "s|/opt/max-hermes|$PROJECT_DIR|g; s|User=ruslan|User=$SERVICE_USER|g" \
+sed "s|/opt/max-hermes|$PROJECT_DIR|g; s|User=max-bridge|User=$SERVICE_USER|g" \
     "$PROJECT_DIR/systemd/max-bridge.service" > /etc/systemd/system/max-bridge.service
 systemctl daemon-reload
 systemctl enable max-bridge
