@@ -60,6 +60,7 @@ class HermesClient:
 
         logger.info("Sending to Hermes: chat_id=%s, user=%s, msg_len=%d", chat_id, user_name, len(message))
         logger.debug("Hermes command: %s", " ".join(shlex.quote(c) for c in cmd))
+        logger.debug("Full message: %r", full_message[:500])
 
         try:
             proc = await asyncio.create_subprocess_exec(
