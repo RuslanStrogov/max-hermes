@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import hmac
 import json
 import logging
 from typing import Any, Optional
@@ -54,7 +52,7 @@ class WebhookServer:
             return web.json_response({
                 "status": "ok",
                 "bot": bot_info,
-                "hermes_url": self._config.hermes_webhook_url,
+                "hermes_bin": self._config.hermes_bin,
             })
         except Exception as e:
             return web.json_response(

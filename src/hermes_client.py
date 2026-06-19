@@ -28,6 +28,10 @@ class HermesClient:
         self._model = model
         self._timeout = timeout
 
+    async def close(self) -> None:
+        """Close client (no-op for CLI-based client)."""
+        pass
+
     async def send_message(
         self,
         message: str,
@@ -36,6 +40,7 @@ class HermesClient:
         user_name: str,
         reply_to: Optional[str] = None,
         raw_update: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """Send a message to Hermes Agent and return the response.
 

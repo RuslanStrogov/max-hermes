@@ -45,11 +45,17 @@ class MessageConverter:
             if attachment_text:
                 text = f"{text}\n{attachment_text}" if text else attachment_text
 
+        # Build user name from first_name + last_name if name is empty
+        user_name = message.sender.name
+        if not user_name:
+            parts = [message.sender.first_name, message.sender.last_name]
+            user_name = " ".join(p for p in parts if p) or "Unknown"
+
         return {
             "message": text,
             "chat_id": str(message.recipient.chat_id),
             "user_id": str(message.sender.user_id),
-            "user_name": message.sender.name,
+            "user_name": user_name,
             "platform": "max",
             "reply_to": message.body.mid,
             "raw_update": {

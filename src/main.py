@@ -99,8 +99,9 @@ async def create_app(config: Config) -> tuple[web.Application, MAXClient, Hermes
     )
 
     hermes_client = HermesClient(
-        webhook_url=config.hermes_webhook_url,
-        secret=config.hermes_webhook_secret,
+        hermes_bin=config.hermes_bin,
+        model=config.hermes_model,
+        timeout=config.hermes_timeout,
     )
 
     # Webhook server

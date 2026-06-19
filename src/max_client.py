@@ -8,9 +8,7 @@ from typing import Any, Optional
 import aiohttp
 
 from src.models import (
-    SendMessageRequest,
     SendMessageResponse,
-    SubscriptionRequest,
     SubscriptionResponse,
 )
 

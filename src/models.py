@@ -1,4 +1,4 @@
-"""Pydantic models for MAX Bot API and Hermes webhook data structures."""
+"""Pydantic models for MAX Bot API and Hermes data structures."""
 
 from __future__ import annotations
 
@@ -26,21 +26,37 @@ class UpdateType(str, Enum):
 class MAXUser(BaseModel):
     """User info from MAX API."""
     user_id: int
-    name: str
+    name: str = ""
+    first_name: str = ""
+    last_name: str = ""
     username: Optional[str] = None
+    is_bot: bool = False
+    last_activity_time: Optional[int] = None
+
+    class Config:
+        extra = "allow"
 
 
 class MAXRecipient(BaseModel):
     """Message recipient."""
     chat_id: int
-    type: str  # "chat", "channel", "user"
+    chat_type: str = "dialog"
+    user_id: Optional[int] = None
+    type: str = "dialog"
+
+    class Config:
+        extra = "allow"
 
 
 class MAXMessageBody(BaseModel):
     """Message body."""
     text: Optional[str] = None
-    mid: Optional[str] = None  # message ID
+    mid: Optional[str] = None  # message ID (string!)
+    seq: Optional[int] = None
     attachments: list[dict[str, Any]] = Field(default_factory=list)
+
+    class Config:
+        extra = "allow"
 
 
 class MAXMessage(BaseModel):
@@ -50,11 +66,8 @@ class MAXMessage(BaseModel):
     body: MAXMessageBody
     timestamp: int
 
-
-class MAXCallbackPayload(BaseModel):
-    """Callback from inline keyboard button."""
-    callback: dict[str, Any]
-    message: MAXMessage
+    class Config:
+        extra = "allow"
 
 
 class MAXUpdate(BaseModel):
@@ -63,22 +76,10 @@ class MAXUpdate(BaseModel):
     message: Optional[MAXMessage] = None
     callback: Optional[dict[str, Any]] = None
     timestamp: int
+    user_locale: Optional[str] = None
 
-
-class NewMessageBody(BaseModel):
-    """Body for sending a message via MAX API."""
-    text: Optional[str] = None
-    format: Optional[str] = None  # "markdown" or "html"
-    attachments: list[dict[str, Any]] = Field(default_factory=list)
-
-
-class SendMessageRequest(BaseModel):
-    """Request to POST /messages."""
-    chat_id: int
-    text: Optional[str] = None
-    format: Optional[str] = None
-    attachments: list[dict[str, Any]] = Field(default_factory=list)
-    reply_to: Optional[int] = None
+    class Config:
+        extra = "allow"
 
 
 class SendMessageResponse(BaseModel):
@@ -88,37 +89,8 @@ class SendMessageResponse(BaseModel):
     error: Optional[str] = None
 
 
-class SubscriptionRequest(BaseModel):
-    """Request to POST /subscriptions."""
-    url: str
-    update_types: list[str] = Field(default_factory=lambda: [
-        "message_created", "message_callback"
-    ])
-
-
 class SubscriptionResponse(BaseModel):
     """Response from POST /subscriptions."""
     id: Optional[str] = None
     url: Optional[str] = None
     ok: bool = True
-
-
-# ─── Hermes Webhook Models ───────────────────────────────────────────────────
-
-
-class HermesWebhookPayload(BaseModel):
-    """Payload sent to Hermes webhook."""
-    message: str
-    chat_id: str
-    user_id: str
-    user_name: str
-    platform: str = "max"
-    reply_to: Optional[str] = None
-    raw_update: Optional[dict[str, Any]] = None
-
-
-class HermesWebhookResponse(BaseModel):
-    """Response from Hermes webhook (agent output)."""
-    status: str
-    message: Optional[str] = None
-    error: Optional[str] = None

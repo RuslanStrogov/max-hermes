@@ -42,6 +42,11 @@ class Config:
     hermes_webhook_url: str = "http://127.0.0.1:8644/webhooks/max-bot"
     hermes_webhook_secret: str = "max-bridge-secret"
 
+    # Hermes CLI
+    hermes_bin: str = "hermes"
+    hermes_model: str = ""
+    hermes_timeout: int = 120
+
     # Bridge HTTP server
     bridge_host: str = "0.0.0.0"
     bridge_port: int = 8787
@@ -67,6 +72,9 @@ class Config:
             max_api_base_url=os.getenv("MAX_API_BASE_URL", "https://platform-api.max.ru").strip(),
             hermes_webhook_url=os.getenv("HERMES_WEBHOOK_URL", "http://127.0.0.1:8644/webhooks/max-bot").strip(),
             hermes_webhook_secret=os.getenv("HERMES_WEBHOOK_SECRET", "max-bridge-secret").strip(),
+            hermes_bin=os.getenv("HERMES_BIN", "hermes").strip(),
+            hermes_model=os.getenv("HERMES_MODEL", "").strip(),
+            hermes_timeout=int(os.getenv("HERMES_TIMEOUT", "120")),
             bridge_host=os.getenv("BRIDGE_HOST", "0.0.0.0").strip(),
             bridge_port=int(os.getenv("BRIDGE_PORT", "8787")),
             bridge_secret=os.getenv("BRIDGE_SECRET", "max-bridge-secret").strip(),
