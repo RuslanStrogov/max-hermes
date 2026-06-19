@@ -101,6 +101,8 @@ class MAXClient:
         For dialogs (DM): pass user_id
         For group chats: pass chat_id
         """
+        logger.info("send_message: chat_id=%s, user_id=%s, text_len=%d", chat_id, user_id, len(text))
+
         params: dict[str, Any] = {}
         if chat_id is not None:
             params["chat_id"] = str(chat_id)

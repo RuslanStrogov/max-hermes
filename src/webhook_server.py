@@ -118,13 +118,25 @@ class WebhookServer:
 
             if agent_text and update.message:
                 # Send response back to MAX
-                # For dialogs: use user_id; for groups: use chat_id
+                # In dialogs: recipient.user_id = bot's ID, sender.user_id = user's ID
+                # We need the user's ID to send the reply
                 recipient = update.message.recipient
+                sender = update.message.sender
+                # Always use sender.user_id for dialogs (the human who wrote)
+                # recipient.user_id in dialogs is the bot itself
+                target_user_id = sender.user_id
+                logger.info(
+                    "Sending response to MAX: chat_id=%s, user_id=%s, text_len=%d",
+                    recipient.chat_id,
+                    target_user_id,
+                    len(agent_text),
+                )
                 max_msg = self._converter.hermes_response_to_max_message(
                     hermes_response,
                     chat_id=recipient.chat_id,
-                    user_id=recipient.user_id,
+                    user_id=target_user_id,
                 )
+                logger.info("MAX send_message payload: %s", max_msg)
                 await self._max.send_message(**max_msg)
 
             return web.json_response({"ok": True})
