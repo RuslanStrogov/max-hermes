@@ -89,15 +89,25 @@ class MAXClient:
 
     async def send_message(
         self,
-        chat_id: int,
-        text: str,
+        chat_id: Optional[int] = None,
+        user_id: Optional[int] = None,
+        text: str = "",
         format: Optional[str] = None,
         attachments: Optional[list[dict[str, Any]]] = None,
-        reply_to: Optional[int] = None,
+        reply_to: Optional[str] = None,
     ) -> SendMessageResponse:
-        """POST /messages — send a message."""
-        payload: dict[str, Any] = {"chat_id": chat_id}
+        """POST /messages — send a message.
 
+        For dialogs (DM): pass user_id
+        For group chats: pass chat_id
+        """
+        params: dict[str, Any] = {}
+        if chat_id is not None:
+            params["chat_id"] = str(chat_id)
+        if user_id is not None:
+            params["user_id"] = str(user_id)
+
+        payload: dict[str, Any] = {}
         if text:
             payload["text"] = text
         if format:
@@ -107,7 +117,10 @@ class MAXClient:
         if reply_to:
             payload["reply_to"] = reply_to
 
-        body = await self._request("POST", "/messages", data=payload)
+        query = "&".join(f"{k}={v}" for k, v in params.items())
+        path = f"/messages?{query}" if query else "/messages"
+
+        body = await self._request("POST", path, data=payload)
 
         return SendMessageResponse(
             message_id=body.get("message_id"),
