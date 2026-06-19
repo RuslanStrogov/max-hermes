@@ -3,4 +3,13 @@ __pycache__/
 .env
 venv/
 *.log
-.DS_Store
+.DS_STORE
+.idea/
+.vscode/
+*.swp
+*.swo
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/

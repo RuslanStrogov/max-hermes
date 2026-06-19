@@ -6,19 +6,24 @@ services:
     container_name: max-bridge
     restart: unless-stopped
     ports:
-      - "8787:8787"
+      - "${BRIDGE_PORT:-8787}:8787"
     env_file:
       - .env
+    environment:
+      # Override Hermes URL for Docker network
+      - HERMES_WEBHOOK_URL=${HERMES_WEBHOOK_URL:-http://host.docker.internal:8644/webhooks/max-bot}
     volumes:
-      - ./logs:/var/log/max-bridge
+      - max-bridge-logs:/var/log/max-bridge
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-    networks:
-      - hermes-net
+      start_period: 10s
+    # Use host network mode if Hermes is on the same host
+    # network_mode: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
-networks:
-  hermes-net:
-    external: true
+volumes:
+  max-bridge-logs:

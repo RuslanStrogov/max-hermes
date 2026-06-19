@@ -12,7 +12,7 @@ from src.config import Config
 from src.converter import MessageConverter
 from src.hermes_client import HermesClient, HermesClientError
 from src.max_client import MAXClient, MAXApiError
-from src.models import MAXUpdate
+from src.models import MAXUpdate, UpdateType
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,9 @@ class WebhookServer:
         self._app = web.Application()
         self._app["hermes_client"] = hermes_client
         self._app["max_client"] = max_client
+        self._builtin_commands = {
+            "cmd_list": self._cmd_list,
+        }
         self._setup_routes()
 
     def _setup_routes(self) -> None:
@@ -101,6 +104,14 @@ class WebhookServer:
                     update.message.sender.user_id,
                 )
                 return web.json_response({"ok": True, "ignored": True})
+
+        # ── Built-in command handling ─────────────────────────────────────
+        # Handle bot commands locally before forwarding to Hermes
+        if update.update_type == UpdateType.MESSAGE_CALLBACK:
+            callback_data = update.callback or {}
+            payload = callback_data.get("payload", "")
+            if payload in self._builtin_commands:
+                return await self._handle_builtin_command(update, payload)
 
         # ── Convert and forward to Hermes ────────────────────────────────
         hermes_payload = self._converter.max_update_to_hermes_message(update)

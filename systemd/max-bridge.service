@@ -1,16 +1,16 @@
 [Unit]
-Description=MAX-Hermes Bridge - MAX Bot API to Hermes Agent webhook bridge
-After=network.target hermes-gateway.service
-Wants=hermes-gateway.service
+Description=MAX-Hermes Bridge - MAX Bot API to Hermes Agent bridge
+After=network.target
+Wants=network-online.target
 
 [Service]
 Type=simple
-User=ruslan
-Group=ruslan
-WorkingDirectory=/mnt/data/projects/max-hermes
-Environment=PATH=/mnt/data/projects/max-hermes/venv/bin:/usr/local/bin:/usr/bin
+User=%i
+Group=%i
+WorkingDirectory=/opt/max-hermes
+Environment=PATH=/opt/max-hermes/venv/bin:/usr/local/bin:/usr/bin
 EnvironmentFile=/etc/max-bridge/.env
-ExecStart=/mnt/data/projects/max-hermes/venv/bin/python -m src.main
+ExecStart=/opt/max-hermes/venv/bin/python -m src.main
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 RestartSec=5
@@ -22,7 +22,7 @@ SyslogIdentifier=max-bridge
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/var/log/max-bridge /mnt/data/projects/max-hermes /home/ruslan/.hermes/logs /home/ruslan/.hermes/sessions /home/ruslan/.hermes/workspace
+ReadWritePaths=/var/log/max-bridge /opt/max-hermes /home/%i/.hermes/logs /home/%i/.hermes/sessions /home/%i/.hermes/workspace
 PrivateTmp=true
 
 [Install]
