@@ -22,7 +22,7 @@ SyslogIdentifier=max-bridge
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/var/log/max-bridge /mnt/data/projects/max-hermes
+ReadWritePaths=/var/log/max-bridge /mnt/data/projects/max-hermes /home/ruslan/.hermes/logs /home/ruslan/.hermes/sessions /home/ruslan/.hermes/workspace
 PrivateTmp=true
 
 [Install]
