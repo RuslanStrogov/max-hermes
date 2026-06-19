@@ -65,7 +65,7 @@ class TestWebhookServer(AioHTTPTestCase):
             "update_type": "message_created",
             "message": {
                 "sender": {"user_id": 12345, "name": "Иван"},
-                "recipient": {"chat_id": 67890, "type": "chat"},
+                "recipient": {"chat_id": 67890, "type": "dialog", "user_id": 12345},
                 "body": {"text": "Привет", "mid": "msg_123"},
                 "timestamp": 1737500130100,
             },

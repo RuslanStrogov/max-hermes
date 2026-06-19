@@ -155,17 +155,29 @@ class MessageConverter:
     def hermes_response_to_max_message(
         response: dict[str, Any],
         chat_id: int,
+        user_id: Optional[int] = None,
     ) -> dict[str, Any]:
-        """Convert Hermes agent response to MAX API message format."""
+        """Convert Hermes agent response to MAX API message format.
+
+        For dialogs (DM): pass user_id — takes priority over chat_id
+        For group chats: pass chat_id only
+        """
         text = response.get("message", response.get("text", ""))
 
         if not text:
             text = "..."
 
         payload: dict[str, Any] = {
-            "chat_id": chat_id,
             "text": text,
         }
+
+        # For dialogs, user_id is required; for groups, chat_id
+        if user_id is not None and user_id > 0:
+            payload["user_id"] = user_id
+        elif chat_id > 0:
+            payload["chat_id"] = chat_id
+        else:
+            logger.warning("Neither user_id nor chat_id available for response")
 
         # Detect if response contains markdown
         if MessageConverter._has_markdown(text):

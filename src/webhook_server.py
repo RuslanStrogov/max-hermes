@@ -26,6 +26,8 @@ class WebhookServer:
         self._hermes = hermes_client
         self._converter = MessageConverter()
         self._app = web.Application()
+        self._app["hermes_client"] = hermes_client
+        self._app["max_client"] = max_client
         self._setup_routes()
 
     def _setup_routes(self) -> None:
@@ -75,6 +77,8 @@ class WebhookServer:
             logger.error("Failed to parse webhook body: %s", e)
             return web.json_response({"error": "Invalid JSON"}, status=400)
 
+        logger.debug("Raw MAX payload: %s", raw_body[:2000])
+
         # ── Process update ───────────────────────────────────────────────
         try:
             update = MAXUpdate(**data)
@@ -114,9 +118,12 @@ class WebhookServer:
 
             if agent_text and update.message:
                 # Send response back to MAX
+                # For dialogs: use user_id; for groups: use chat_id
+                recipient = update.message.recipient
                 max_msg = self._converter.hermes_response_to_max_message(
                     hermes_response,
-                    update.message.recipient.chat_id,
+                    chat_id=recipient.chat_id,
+                    user_id=recipient.user_id,
                 )
                 await self._max.send_message(**max_msg)
 

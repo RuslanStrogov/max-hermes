@@ -117,6 +117,10 @@ class MAXClient:
         if reply_to:
             payload["reply_to"] = reply_to
 
+        if not params:
+            logger.error("send_message called without chat_id or user_id")
+            raise MAXApiError("validation", "Either chat_id or user_id must be provided", 400)
+
         query = "&".join(f"{k}={v}" for k, v in params.items())
         path = f"/messages?{query}" if query else "/messages"
 
