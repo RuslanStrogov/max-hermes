@@ -1,51 +1,32 @@
-"""Hermes webhook client — sends messages to Hermes webhook adapter."""
+"""Hermes client — sends messages to Hermes Agent via CLI."""
 
 from __future__ import annotations
 
-import hashlib
-import hmac
+import asyncio
 import json
 import logging
+import shlex
 from typing import Any, Optional
-
-import aiohttp
 
 logger = logging.getLogger(__name__)
 
 
 class HermesClientError(Exception):
-    """Hermes webhook error."""
+    """Hermes client error."""
 
 
 class HermesClient:
-    """Client for Hermes webhook adapter."""
+    """Client that sends messages to Hermes Agent via `hermes chat -q`."""
 
-    def __init__(self, webhook_url: str, secret: str):
-        self._webhook_url = webhook_url
-        self._secret = secret
-        self._session: Optional[aiohttp.ClientSession] = None
-
-    async def _get_session(self) -> aiohttp.ClientSession:
-        """Get or create aiohttp session."""
-        if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=60),
-            )
-        return self._session
-
-    async def close(self) -> None:
-        """Close HTTP session."""
-        if self._session and not self._session.closed:
-            await self._session.close()
-            self._session = None
-
-    def _sign_payload(self, payload: bytes) -> str:
-        """Generate HMAC-SHA256 signature for Hermes webhook."""
-        return hmac.new(
-            self._secret.encode("utf-8"),
-            payload,
-            hashlib.sha256,
-        ).hexdigest()
+    def __init__(
+        self,
+        hermes_bin: str = "hermes",
+        model: Optional[str] = None,
+        timeout: int = 120,
+    ):
+        self._hermes_bin = hermes_bin
+        self._model = model
+        self._timeout = timeout
 
     async def send_message(
         self,
@@ -56,46 +37,91 @@ class HermesClient:
         reply_to: Optional[str] = None,
         raw_update: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
-        """Send a message to Hermes webhook.
+        """Send a message to Hermes Agent and return the response.
 
-        Returns dict with 'status' and 'message' (agent response) on success.
+        Returns dict with 'message' (agent response text) on success.
         """
-        payload = {
-            "message": message,
-            "chat_id": chat_id,
-            "user_id": user_id,
-            "user_name": user_name,
-            "platform": "max",
-        }
-
+        # Build context for the agent
+        context = f"[MAX chat_id={chat_id}, user={user_name} (id={user_id})]"
         if reply_to:
-            payload["reply_to"] = reply_to
-        if raw_update:
-            payload["raw_update"] = raw_update  # type: ignore[typeddict-unknown-key]
+            context += f" [reply_to={reply_to}]"
 
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        signature = self._sign_payload(body)
+        full_message = f"{context}\n\n{message}"
 
-        session = await self._get_session()
+        cmd = [self._hermes_bin, "chat", "-q", full_message, "-Q", "--source", "max-bridge"]
+
+        if self._model:
+            cmd.extend(["-m", self._model])
+
+        logger.info("Sending to Hermes: chat_id=%s, user=%s, msg_len=%d", chat_id, user_name, len(message))
+        logger.debug("Hermes command: %s", " ".join(shlex.quote(c) for c in cmd))
 
         try:
-            async with session.post(
-                self._webhook_url,
-                data=body,
-                headers={
-                    "Content-Type": "application/json; charset=utf-8",
-                    "X-Hermes-Signature": f"sha256={signature}",
-                },
-            ) as resp:
-                response_data = await resp.json(content_type=None)
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
 
-                if resp.status >= 400:
-                    error = response_data.get("error", "Unknown error")
-                    logger.error("Hermes webhook error (HTTP %d): %s", resp.status, error)
-                    raise HermesClientError(f"HTTP {resp.status}: {error}")
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    proc.communicate(),
+                    timeout=self._timeout,
+                )
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                raise HermesClientError(f"Hermes timed out after {self._timeout}s")
 
-                return response_data
+            stdout_text = stdout.decode("utf-8", errors="replace").strip()
+            stderr_text = stderr.decode("utf-8", errors="replace").strip()
 
-        except aiohttp.ClientError as e:
-            logger.error("Hermes webhook connection error: %s", e)
+            if proc.returncode != 0:
+                logger.error("Hermes exit code %d: %s", proc.returncode, stderr_text[:500])
+                raise HermesClientError(f"Hermes exited with code {proc.returncode}: {stderr_text[:200]}")
+
+            if stderr_text:
+                logger.debug("Hermes stderr: %s", stderr_text[:300])
+
+            # Parse response — hermes chat -Q outputs the agent response
+            agent_response = self._extract_response(stdout_text)
+
+            logger.info("Hermes response: %d chars", len(agent_response))
+
+            return {
+                "message": agent_response,
+                "chat_id": chat_id,
+                "user_id": user_id,
+                "platform": "max",
+            }
+
+        except HermesClientError:
+            raise
+        except Exception as e:
+            logger.error("Hermes client error: %s", e)
             raise HermesClientError(str(e)) from e
+
+    @staticmethod
+    def _extract_response(stdout: str) -> str:
+        """Extract agent response from hermes chat output."""
+        if not stdout:
+            return ""
+
+        # hermes chat -Q outputs the response directly
+        # Try to find JSON output first
+        for line in stdout.split("\n"):
+            line = line.strip()
+            if line.startswith("{") and line.endswith("}"):
+                try:
+                    data = json.loads(line)
+                    if "message" in data:
+                        return data["message"]
+                    if "response" in data:
+                        return data["response"]
+                    if "text" in data:
+                        return data["text"]
+                except json.JSONDecodeError:
+                    pass
+
+        # Fallback: return the full stdout
+        return stdout
