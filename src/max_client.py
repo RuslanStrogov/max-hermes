@@ -153,6 +153,20 @@ class MAXClient:
         """GET /messages/{messageId} — get a message."""
         return await self._request("GET", f"/messages/{message_id}")
 
+    # ── Chat actions ──────────────────────────────────────────────────────────
+
+    async def send_chat_action(
+        self,
+        chat_id: int,
+        action: str = "typing_on",
+    ) -> dict[str, Any]:
+        """POST /chats/{chatId}/actions — send chat action (e.g. typing indicator).
+
+        Common actions: 'typing_on', 'typing_off'
+        """
+        payload = {"action": action}
+        return await self._request("POST", f"/chats/{chat_id}/actions", data=payload)
+
     # ── Callback answer ─────────────────────────────────────────────────────
 
     async def answer_callback(

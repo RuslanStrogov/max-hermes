@@ -110,6 +110,11 @@ class WebhookServer:
             return web.json_response({"ok": True, "skipped": True})
 
         try:
+            # Send typing indicator to MAX while Hermes is thinking
+            if update.message:
+                recipient = update.message.recipient
+                await self._max.send_chat_action(chat_id=recipient.chat_id, action="typing_on")
+
             # Send to Hermes webhook and get agent response
             hermes_response = await self._hermes.send_message(**hermes_payload)
 
