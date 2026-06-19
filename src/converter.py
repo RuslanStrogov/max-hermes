@@ -309,9 +309,11 @@ class MessageConverter:
                     label += f"\nURL: {url}"
                 parts.append(label)
             elif att_type == "audio":
-                label = "[Аудио]"
+                label = "🎤 [Голосовое сообщение]"
                 if url:
                     label += f"\nURL: {url}"
+                if token:
+                    label += f"\nToken: {token[:20]}..."
                 parts.append(label)
             elif att_type == "file":
                 name = att.get("name", "Файл")
