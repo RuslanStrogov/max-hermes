@@ -84,6 +84,14 @@ class HermesClient:
 
             if proc.returncode != 0:
                 logger.error("Hermes exit code %d: %s", proc.returncode, stderr_text[:500])
+                # Write full stderr to temp file for debugging
+                import tempfile
+                with tempfile.NamedTemporaryFile(mode='w', prefix='hermes_stderr_', delete=False, suffix='.log') as f:
+                    f.write(f"Command: {' '.join(shlex.quote(c) for c in cmd)}\n")
+                    f.write(f"Exit code: {proc.returncode}\n")
+                    f.write(f"STDOUT:\n{stdout_text}\n")
+                    f.write(f"STDERR:\n{stderr_text}\n")
+                    logger.error("Full Hermes output written to %s", f.name)
                 raise HermesClientError(f"Hermes exited with code {proc.returncode}: {stderr_text[:200]}")
 
             if stderr_text:
