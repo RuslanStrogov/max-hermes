@@ -6,13 +6,11 @@ from aiohttp import web
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from max_shared.max_client import MAXClient
+
 from src.config import Config
 from src.hermes_client import HermesClient
-from src.max_client import MAXClient
 from src.webhook_server import WebhookServer
-
-
-@pytest.fixture
 def config():
     return Config(
         max_bot_token="test-token",
