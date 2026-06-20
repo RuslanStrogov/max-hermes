@@ -360,6 +360,14 @@ MIT License. См. [LICENSE](LICENSE).
 |--------|----------|
 | [MAX Hermes Plugin](https://github.com/RuslanStrogov/max-hermes-plugin) | Нативный платформенный плагин для Hermes Gateway. Прямая интеграция MAX без моста. |
 
+## 📢 Пресс-релизы
+
+Готовые тексты для публикации в сообществах и СМИ:
+
+- [Короткий текст для Telegram-каналов](PRESS_RELEASE.md)
+- [Подробный текст для Хабра/vc.ru/DTF](PRESS_RELEASE_DETAIL.md)
+- [Пост для Reddit/Hacker News](PRESS_RELEASE_REDDIT.md)
+
 <div align="center">
 
   <sub>🎨 Designed by <a href="https://br-design.ru/">BR-DESIGN</a></sub>
