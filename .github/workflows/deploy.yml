@@ -8,8 +8,12 @@ name: Deploy
 #     branches: [main]
 #     tags: ["v*"]
 
-on:
-  workflow_dispatch:
+# Deploy disabled — network is closed
+# on:
+#   push:
+#     branches: [main]
+#     tags: ["v*"]
+on: []
 
 jobs:
   deploy:
