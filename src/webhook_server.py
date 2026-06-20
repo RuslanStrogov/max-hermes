@@ -130,22 +130,37 @@ class WebhookServer:
 
             if agent_text and update.message:
                 # Send response back to MAX
-                # In dialogs: recipient.user_id = bot's ID, sender.user_id = user's ID
-                # We need the user's ID to send the reply
                 recipient = update.message.recipient
                 sender = update.message.sender
-                # Always use sender.user_id for dialogs (the human who wrote)
-                # recipient.user_id in dialogs is the bot itself
-                target_user_id = sender.user_id
-                logger.info(
-                    "Sending response to MAX: chat_id=%s, user_id=%s, text_len=%d",
-                    recipient.chat_id,
-                    target_user_id,
-                    len(agent_text),
-                )
+
+                # Determine how to send the reply based on chat type
+                chat_type = recipient.type or recipient.chat_type or "dialog"
+                is_group = chat_type in ("group", "channel", "supergroup")
+
+                if is_group:
+                    # In groups/channels: send to chat_id
+                    target_chat_id = recipient.chat_id
+                    target_user_id = None
+                    logger.info(
+                        "Sending response to MAX group: chat_id=%s, chat_type=%s, text_len=%d",
+                        target_chat_id,
+                        chat_type,
+                        len(agent_text),
+                    )
+                else:
+                    # In DMs: send to user_id (the human who wrote)
+                    # recipient.user_id in dialogs is the bot itself
+                    target_chat_id = None
+                    target_user_id = sender.user_id
+                    logger.info(
+                        "Sending response to MAX DM: user_id=%s, text_len=%d",
+                        target_user_id,
+                        len(agent_text),
+                    )
+
                 max_msg = self._converter.hermes_response_to_max_message(
                     hermes_response,
-                    chat_id=recipient.chat_id,
+                    chat_id=target_chat_id,
                     user_id=target_user_id,
                 )
                 logger.info("MAX send_message payload: %s", max_msg)

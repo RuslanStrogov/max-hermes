@@ -1,10 +1,51 @@
-# MAX-Hermes Bridge
+<div align="center">
 
-Мост между [MAX Bot API](https://dev.max.ru) и [Hermes Agent](https://hermes-agent.nousresearch.com) — позволяет подключить бота в мессенджере MAX к AI-агенту Hermes.
+  <img src="banner.png" alt="MAX Hermes Bridge Banner" width="100%"/>
 
-> **Хотите интеграцию уровня Hermes (send_message, cron, sessions)?** Используйте [MAX Hermes Plugin](https://github.com/RuslanStrogov/max-hermes-plugin) — нативный платформенный адаптер для Hermes Gateway.
+  <p>
+    <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" alt="Python"/>
+    <img src="https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi&logoColor=white" alt="FastAPI"/>
+    <img src="https://img.shields.io/badge/Hermes-Agent-8B5CF6" alt="Hermes"/>
+    <img src="https://img.shields.io/badge/Docker-🐳-2496ED?logo=docker&logoColor=white" alt="Docker"/>
+    <img src="https://img.shields.io/badge/License-MIT-22C55E" alt="MIT"/>
+  </p>
 
-## Архитектура
+  <p>
+    <img src="https://img.shields.io/badge/Webhook-✅-34D399" alt="Webhook"/>
+    <img src="https://img.shields.io/badge/CLI%20Bridge-✅-34D399" alt="CLI"/>
+    <img src="https://img.shields.io/badge/Docker-✅-34D399" alt="Docker"/>
+    <img src="https://img.shields.io/badge/systemd-✅-34D399" alt="systemd"/>
+  </p>
+
+  <h3>Мост между <a href="https://dev.max.ru">MAX Bot API</a> и <a href="https://hermes-agent.nousresearch.com">Hermes Agent</a></h3>
+  <p>Python-мост через CLI с поддержкой webhook, Docker и systemd</p>
+
+  <p><sub>🎨 Designed by <a href="https://br-design.ru/">BR-DESIGN</a></sub></p>
+
+</div>
+
+---
+
+## 📋 Содержание
+
+- [Архитектура](#-архитектура)
+- [Возможности](#-возможности)
+- [Требования](#-требования)
+- [Установка](#-установка)
+- [Настройка](#-настройка)
+- [Запуск](#-запуск)
+- [Структура проекта](#-структура-проекта)
+- [Переменные окружения](#-переменные-окружения)
+- [Roadmap](#-roadmap)
+- [Релизы и CI/CD](#-релизы-и-cicd)
+- [Сравнение с Telegram Bot API](#-сравнение-с-telegram-bot-api)
+- [Тестирование](#-тестирование)
+- [Устранение неполадок](#-устранение-неполадок)
+- [Лицензия](#-лицензия)
+
+---
+
+## 🏗️ Архитектура
 
 ```
 ┌──────────┐   webhook    ┌─────────────┐   CLI/SUB    ┌──────────────┐
@@ -21,14 +62,59 @@
 4. Мост вызывает Hermes Agent через CLI
 5. Ответ Hermes отправляется обратно в MAX через Bot API
 
-## Требования
+> **Хотите интеграцию уровня Hermes (send_message, cron, sessions)?** Используйте [MAX Hermes Plugin](https://github.com/RuslanStrogov/max-hermes-plugin) — нативный платформенный адаптер для Hermes Gateway.
+
+## ✨ Возможности
+
+### Что уже работает
+
+| Фича | Статус |
+|------|--------|
+| Приём сообщений от MAX через webhook | ✅ |
+| Отправка ответов в MAX | ✅ |
+| Индикатор «Печатает...» пока агент думает | ✅ |
+| Inline keyboard (кнопки в сообщении) | ✅ |
+| Callback от кнопок | ✅ |
+| Поддержка нескольких пользователей | ✅ |
+| Белый список пользователей (ALLOWED_USERS) | ✅ |
+| Markdown-форматирование ответов | ✅ |
+| systemd-сервис с автозапуском | ✅ |
+| Docker / Docker Compose | ✅ |
+| Health check endpoint | ✅ |
+| Логирование в journald / файл | ✅ |
+| Обработка всех типов событий MAX API | ✅ |
+| Скачивание вложений (изображения, видео, аудио, файлы) | ✅ |
+| Отправка изображений через upload API | ✅ |
+| Отправка файлов через upload API | ✅ |
+| Отправка голосовых сообщений (audio attachment) | ✅ |
+| Редактирование сообщений (PUT /messages/{id}) | ✅ |
+| Удаление сообщений (DELETE /messages/{id}) | ✅ |
+| Long Polling (GET /updates) | ✅ |
+| Webhook управление (POST/GET/DELETE /subscriptions) | ✅ |
+| Групповые чаты (group/channel/supergroup) | ✅ |
+| Маршрутизация ответов: chat_id для групп, user_id для DM | ✅ |
+| События групп: user_added, user_removed, chat_title_changed | ✅ |
+| Автодеплой через GitHub Actions | ✅ |
+| CI (тесты на Python 3.11, 3.12) | ✅ |
+| Автоматические релизы (GitHub Release) | ✅ |
+
+### Roadmap
+
+| Фича | Статус | Примечание |
+|------|--------|------------|
+| Отправка геолокации | 🔜 | Нужен формат `location` attachment |
+| Стикеры | ❓ | Нет информации о поддержке в API |
+| Read receipts (галочки) | ❌ | Не поддерживается MAX Bot API |
+| Menu button (как в Telegram) | ❌ | Нет аналога `/setMyCommands` в MAX |
+
+## 📋 Требования
 
 - Python 3.11+
 - Hermes Agent (установленный и настроенный)
 - Сервер с публичным IP (или tunnel) для приёма webhook
 - SSL-сертификат (Let's Encrypt или самоподписанный)
 
-## Установка
+## 📦 Установка
 
 ### 1. Клонирование репозитория
 
@@ -47,30 +133,9 @@ pip install -r requirements.txt
 
 ### 3. Создание бота в MAX
 
-> ⚠️ **Важно:** Создание ботов на платформе MAX доступно **только юридическим лицам, ИП и самозанятым** (резидентам РФ). Физические лицам создание ботов **недоступно**.
+> ⚠️ **Важно:** Создание ботов на платформе MAX доступно **только юридическим лицам, ИП и самозанятым** (резидентам РФ).
 
-**Требования к профилю:**
-
-| Тип профиля | Кол-во ботов |
-|---|---|
-| Организация / ИП | Несколько (не ограничено платформой) |
-| Самозанятый | Ограничено |
-
-**Пошаговая инструкция:**
-
-1. Перейдите на [портал MAX для партнёров](https://business.max.ru)
-2. **Создайте и верифицируйте профиль** организации, ИП или самозанятого (это обязательный шаг)
-3. В панели управления нажмите **«Добавить бота»**
-4. Заполните данные бота (карточка):
-   - **Название** — от 1 до 59 символов (латиница, кириллица, цифры; эмодзи не поддерживаются)
-   - **Никнейм** — генерируется автоматически (например, `se13320221_bot` для ИП/юрлиц, `se(orgid)_bot` для самозанятых). Ник должен заканчиваться на `_bot` или `bot`, длина 11–60 символов
-   - Сайт организации (не более 1024 символов)
-   - Логотип и описание
-5. Нажмите **«Готово»** — бот создан и отправлен на **модерацию**
-6. Дождитесь уведомления о прохождении модерации (приходит в личные сообщения от бота «MAX для бизнеса»)
-7. После модерации **получите токен бота** и API-идентификатор `user_id` — они понадобятся для настройки моста
-
-Подробнее: [MAX для разработчиков — Создание чат-бота](https://dev.max.ru/docs/chatbots/bots-create)
+Подробная инструкция: [MAX для разработчиков — Создание чат-бота](https://dev.max.ru/docs/chatbots/bots-create)
 
 ### 4. Настройка конфигурации
 
@@ -79,40 +144,30 @@ cp .env.example .env
 nano .env
 ```
 
-Заполните обязательные поля:
-
-| Переменная | Описание |
-|------------|----------|
-| `MAX_BOT_TOKEN` | Токен бота от MAX |
-| `MAX_API_BASE_URL` | URL MAX API (по умолчанию `https://platform-api.max.ru`) |
-| `HERMES_BIN` | Путь к команде `hermes` (по умолчанию `hermes`) |
-| `HERMES_MODEL` | Модель Hermes (например `qwen2:1.5b`) |
-| `HERMES_TIMEOUT` | Таймаут ожидания ответа в секундах |
-| `BRIDGE_HOST` | Хост для HTTP-сервера моста |
-| `BRIDGE_PORT` | Порт для HTTP-сервера моста |
-| `LOG_LEVEL` | Уровень логирования (`DEBUG`, `INFO`, `WARNING`) |
-| `ALLOWED_USERS` | Разрешённые user ID (через запятую, пустое = все) |
-
-### 5. Настройка Hermes Agent
-
-Убедитесь, что Hermes Agent установлен и работает:
+### 5. Запуск
 
 ```bash
-hermes --version
+source venv/bin/activate
+python -m src.main
 ```
 
-Если используется Ollama, убедитесь, что нужные модели загружены:
+## ⚙️ Настройка
 
-```bash
-ollama list
-ollama pull qwen2:1.5b
-```
+### Переменные окружения
 
-### 6. Настройка сервера (Linux)
+| Переменная | По умолчанию | Описание |
+|------------|--------------|----------|
+| `MAX_BOT_TOKEN` | *(обяз.)* | Токен бота MAX |
+| `MAX_API_BASE_URL` | `https://platform-api.max.ru` | Базовый URL API |
+| `HERMES_BIN` | `hermes` | Путь к исполняемому файлу hermes |
+| `HERMES_MODEL` | *(пусто)* | Модель AI (напр. `qwen2:1.5b`) |
+| `HERMES_TIMEOUT` | `120` | Таймаут ожидания ответа (сек) |
+| `BRIDGE_HOST` | `0.0.0.0` | Адрес HTTP-сервера |
+| `BRIDGE_PORT` | `8787` | Порт HTTP-сервера |
+| `LOG_LEVEL` | `INFO` | Уровень логирования |
+| `ALLOWED_USERS` | *(пусто)* | Список разрешённых ID |
 
-#### Nginx (обратный прокси)
-
-Создайте конфигурацию `/etc/nginx/sites-available/max-bridge`:
+### Nginx (обратный прокси)
 
 ```nginx
 server {
@@ -136,71 +191,21 @@ server {
 }
 ```
 
-Активируйте и проверьте:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/max-bridge /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-#### Let's Encrypt (SSL)
-
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
-```
-
-#### Добавление пользователя
-
-```bash
-sudo useradd -r -s /bin/false max-bridge
-sudo chown -R max-bridge:max-bridge /var/log/max-bridge
-```
-
-### 7. Системная установка (systemd)
-
-Скопируйте файл сервиса:
+### systemd
 
 ```bash
 sudo cp systemd/max-bridge.service /etc/systemd/system/
-```
-
-Создайте папку для конфигурации:
-
-```bash
-sudo mkdir -p /etc/max-bridge
-sudo cp .env.example /etc/max-bridge/.env
-sudo nano /etc/max-bridge/.env   # Вставьте свой токен!
-sudo chmod 600 /etc/max-bridge/.env
-sudo chown max-bridge:max-bridge /etc/max-bridge/.env
-```
-
-Перезагрузите и запустите:
-
-```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now max-bridge
 ```
 
-Или используйте скрипт автоматической установки:
+### Docker
 
 ```bash
-sudo bash scripts/setup.sh
+docker compose up -d --build
 ```
 
-### 8. Регистрация webhook в MAX
-
-После запуска моста зарегистрируйте webhook:
-
-```bash
-curl -X POST https://platform-api.max.ru/subscriptions \
-  -H "Authorization: YOUR_BOT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://your-domain.com/webhook", "update_types": ["message_created"]}'
-```
-
-## Запуск
+## 🚀 Запуск
 
 ### Напрямую
 
@@ -212,33 +217,19 @@ python -m src.main
 ### Как служба (systemd)
 
 ```bash
-# Запуск
 sudo systemctl start max-bridge
-
-# Остановка
-sudo systemctl stop max-bridge
-
-# Проверка статуса
 sudo systemctl status max-bridge
-
-# Просмотр логов
 sudo journalctl -u max-bridge -f
 ```
 
 ### Docker
 
 ```bash
-# Сборка и запуск
 docker compose up -d --build
-
-# Просмотр логов
 docker compose logs -f
-
-# Остановка
-docker compose down
 ```
 
-## Структура проекта
+## 📁 Структура проекта
 
 ```
 max-hermes/
@@ -269,67 +260,7 @@ max-hermes/
 └── README.md
 ```
 
-## Переменные окружения
-
-| Переменная | По умолчанию | Описание |
-|------------|--------------|----------|
-| `MAX_BOT_TOKEN` | *(обяз.)* | Токен бота MAX |
-| `MAX_API_BASE_URL` | `https://platform-api.max.ru` | Базовый URL API |
-| `HERMES_BIN` | `hermes` | Путь к исполняемому файлу hermes |
-| `HERMES_MODEL` | *(пусто)* | Модель AI (напр. `qwen2:1.5b`) |
-| `HERMES_TIMEOUT` | `120` | Таймаут ожидания ответа (сек) |
-| `BRIDGE_HOST` | `0.0.0.0` | Адрес HTTP-сервера |
-| `BRIDGE_PORT` | `8787` | Порт HTTP-сервера |
-| `LOG_LEVEL` | `INFO` | Уровень логирования |
-| `ALLOWED_USERS` | *(пусто)* | Список разрешённых ID |
-
-## Возможности
-
-### Что уже работает
-
-| Фича | Статус |
-|------|--------|
-| Приём сообщений от MAX через webhook | ✅ |
-| Отправка ответов в MAX | ✅ |
-| Индикатор «Печатает...» пока агент думает | ✅ |
-| Inline keyboard (кнопки в сообщении) | ✅ |
-| Callback от кнопок | ✅ |
-| Поддержка нескольких пользователей | ✅ |
-| Белый список пользователей (ALLOWED_USERS) | ✅ |
-| Markdown-форматирование ответов | ✅ |
-| systemd-сервис с автозапуском | ✅ |
-| Docker / Docker Compose | ✅ |
-| Health check endpoint | ✅ |
-| Логирование в journald / файл | ✅ |
-| Обработка всех типов событий MAX API | ✅ |
-| Скачивание вложений (изображения, видео, аудио, файлы) | ✅ |
-| Отправка изображений через upload API | ✅ |
-| Редактирование сообщений (PUT /messages/{id}) | ✅ |
-| Удаление сообщений (DELETE /messages/{id}) | ✅ |
-| Long Polling (GET /updates) | ✅ |
-| Webhook управление (POST/GET/DELETE /subscriptions) | ✅ |
-| Автодеплой через GitHub Actions | ✅ |
-| CI (тесты на Python 3.11, 3.12) | ✅ |
-| Автоматические релизы (GitHub Release) | ✅ |
-
-### Что можно добавить (roadmap)
-
-| Фича | Статус | Примечание |
-|------|--------|------------|
-| Отправка изображений | 🔜 | Upload через `/uploads?type=image` работает, нужен правильный формат attachment |
-| Отправка файлов | 🔜 | Аналогично изображениям |
-| Отправка голосовых сообщений | 🔜 | Нужен формат `audio` attachment |
-| Отправка геолокации | 🔜 | Нужен формат `location` attachment |
-| Reply на сообщения | 🔜 | `reply_to` в `send_message` поддерживается |
-| Редактирование сообщений | 🔜 | `PUT /messages/{id}` есть в API |
-| Удаление сообщений | 🔜 | `DELETE /messages/{id}` есть в API |
-| Групповые чаты | 🔜 | Нужна адаптация `chat_id` вместо `user_id` |
-| Каналы | 🔜 | Аналогично групповым чатам |
-| Стикеры | ❓ | Нет информации о поддержке в API |
-| Read receipts (галочки) | ❌ | Не поддерживается MAX Bot API |
-| Menu button (как в Telegram) | ❌ | Нет аналога `/setMyCommands` в MAX |
-
-## Сравнение с Telegram Bot API
+## 📊 Сравнение с Telegram Bot API
 
 | Возможность | Telegram | MAX Bot API |
 |-------------|----------|-------------|
@@ -339,43 +270,16 @@ max-hermes/
 | Reply keyboard | ✅ | ❌ (только inline) |
 | Callback buttons | ✅ | ✅ |
 | Send/Edit/Delete messages | ✅ | ✅ |
-| Typing indicator | ✅ | ✅ (`typing_on` / `typing_off`) |
+| Typing indicator | ✅ | ✅ |
 | Read receipts | ✅ | ❌ |
-| Bot commands menu | ✅ (`/setMyCommands`) | ❌ |
+| Bot commands menu | ✅ | ❌ |
 | Send images/files | ✅ | ✅ (через upload) |
 | Send location | ✅ | ❓ |
 | Send stickers | ✅ | ❓ |
 | Group chats | ✅ | ✅ |
 | Channels | ✅ | ✅ |
 
-## Разработка
-
-### Git flow
-
-- `main` — стабильная ветка, релизы
-- `develop` — ветка разработки, интеграция изменений
-- Релизы помечаются тегами `v*` (например `v1.0.0`)
-- При пуше в `main` или тег `v*` автоматически деплоится на сервер
-
-### CI/CD
-
-| Workflow | Триггер | Описание |
-|----------|---------|----------|
-| CI (test) | push/PR в `main`, `develop` | Запуск тестов на Python 3.11, 3.12 + линтер |
-| Deploy | push в `main` или тег `v*` | Автодеплой на сервер через SSH |
-| Release | тег `v*` | Автоматическое создание GitHub Release |
-
-### Настройка автодеплоя
-
-В настройках репозитория GitHub → Settings → Secrets → Actions добавьте:
-
-| Secret | Описание |
-|--------|----------|
-| `DEPLOY_HOST` | IP-адрес или домен сервера |
-| `DEPLOY_USER` | Пользователь SSH |
-| `DEPLOY_SSH_KEY` | Приватный SSH-ключ |
-
-### Запуск тестов
+## 🧪 Тестирование
 
 ```bash
 source venv/bin/activate
@@ -383,7 +287,7 @@ pip install pytest pytest-asyncio
 python -m pytest tests/ -v
 ```
 
-## Устранение неполадок
+## 🔧 Устранение неполадок
 
 ### Мост не получает сообщения от MAX
 
@@ -395,7 +299,6 @@ python -m pytest tests/ -v
 
 1. Проверьте что Hermes установлен: `hermes --version`
 2. Проверьте что модель загружена: `ollama list`
-3. Проверьте права на запись в `~/.hermes/logs/`
 
 ### Бот не отвечает в MAX
 
@@ -403,6 +306,61 @@ python -m pytest tests/ -v
 2. Убедитесь что `MAX_BOT_TOKEN` валиден
 3. Проверьте что бот активирован в MAX
 
-## Лицензия
+## 🚀 Релизы и CI/CD
+
+### Git flow
+
+- `main` — стабильная ветка, релизы
+- `develop` — ветка разработки, интеграция изменений
+- Релизы помечаются тегами `v*` (например `v1.1.0`)
+- При пуше в `main` или тег `v*` автоматически деплоится на сервер
+
+### GitHub Actions
+
+| Workflow | Триггер | Описание |
+|----------|---------|----------|
+| **CI** | push/PR в `main`, `develop` | Запуск тестов на Python 3.11, 3.12 + линтер |
+| **Deploy** | push в `main` или тег `v*` | Автодеплой на сервер через SSH |
+| **Release** | тег `v*` | Автоматическое создание GitHub Release |
+
+### Настройка автодеплоя
+
+В настройках репозитория GitHub → Settings → Secrets → Actions добавьте:
+
+| Secret | Описание |
+|--------|----------|
+| `DEPLOY_HOST` | IP-адрес или домен сервера |
+| `DEPLOY_USER` | Пользователь SSH |
+| `DEPLOY_SSH_KEY` | Приватный SSH-ключ |
+
+### Создание релиза
+
+```bash
+# Собрать изменения в develop
+git checkout develop
+# ... коммиты ...
+
+# Слить в main и создать тег
+git checkout main
+git merge develop --no-ff
+git tag -a v1.2.0 -m "Release v1.2.0: описание"
+git push origin main --tags
+```
+
+## 📄 Лицензия
 
 MIT License. См. [LICENSE](LICENSE).
+
+---
+
+## 🔗 Связанные проекты
+
+| Проект | Описание |
+|--------|----------|
+| [MAX Hermes Plugin](https://github.com/RuslanStrogov/max-hermes-plugin) | Нативный платформенный плагин для Hermes Gateway. Прямая интеграция MAX без моста. |
+
+<div align="center">
+
+  <sub>🎨 Designed by <a href="https://br-design.ru/">BR-DESIGN</a></sub>
+
+</div>

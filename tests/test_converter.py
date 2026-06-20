@@ -157,3 +157,336 @@ class TestMessageConverter:
         result = MessageConverter.build_inline_keyboard(buttons)
         assert result["type"] == "inline_keyboard"
         assert len(result["payload"]["buttons"]) == 2
+
+    def test_voice_message_to_hermes(self):
+        """Test that audio attachment is converted to voice message text."""
+        from src.models import MAXAttachment, MAXAttachmentPayload
+
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_CREATED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=67890, type="dialog"),
+                body=MAXMessageBody(
+                    text="",
+                    mid="msg_voice_001",
+                    attachments=[
+                        MAXAttachment(
+                            type="audio",
+                            payload=MAXAttachmentPayload(
+                                url="https://cdn.max.ru/audio/abc123.ogg",
+                                token="audio_token_xyz",
+                            ),
+                        )
+                    ],
+                ),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "🎤 [Голосовое сообщение]" in result["message"]
+        assert "https://cdn.max.ru/audio/abc123.ogg" in result["message"]
+        # Check attachments info
+        assert len(result["attachments"]) == 1
+        assert result["attachments"][0]["type"] == "audio"
+
+    def test_voice_message_with_caption(self):
+        """Test voice message with text caption."""
+        from src.models import MAXAttachment, MAXAttachmentPayload
+
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_CREATED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=67890, type="dialog"),
+                body=MAXMessageBody(
+                    text="Слушай это",
+                    mid="msg_voice_002",
+                    attachments=[
+                        MAXAttachment(
+                            type="audio",
+                            payload=MAXAttachmentPayload(
+                                url="https://cdn.max.ru/audio/def456.ogg",
+                                token="audio_token_abc",
+                            ),
+                        )
+                    ],
+                ),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "Слушай это" in result["message"]
+        assert "🎤 [Голосовое сообщение]" in result["message"]
+
+    def test_format_attachments_audio(self):
+        """Test _format_attachments for audio type."""
+        attachments = [
+            {
+                "type": "audio",
+                "payload": {
+                    "url": "https://cdn.max.ru/audio/test.ogg",
+                    "token": "test_audio_token_12345",
+                },
+            }
+        ]
+        result = MessageConverter._format_attachments(attachments)
+        assert "🎤 [Голосовое сообщение]" in result
+        assert "https://cdn.max.ru/audio/test.ogg" in result
+
+    def test_format_attachments_image(self):
+        """Test _format_attachments for image type."""
+        attachments = [
+            {
+                "type": "image",
+                "payload": {
+                    "url": "https://cdn.max.ru/image/photo.png",
+                    "token": "test_image_token_abc",
+                },
+            }
+        ]
+        result = MessageConverter._format_attachments(attachments)
+        assert "🖼 [Изображение]" in result
+        assert "https://cdn.max.ru/image/photo.png" in result
+
+    def test_format_attachments_file(self):
+        """Test _format_attachments for file type."""
+        attachments = [
+            {
+                "type": "file",
+                "payload": {
+                    "url": "https://cdn.max.ru/files/document.pdf",
+                    "token": "test_file_token_xyz",
+                },
+                "name": "document.pdf",
+            }
+        ]
+        result = MessageConverter._format_attachments(attachments)
+        assert "📎 [Файл: document.pdf]" in result
+        assert "https://cdn.max.ru/files/document.pdf" in result
+
+    def test_image_message_to_hermes(self):
+        """Test that image attachment is converted correctly."""
+        from src.models import MAXAttachment, MAXAttachmentPayload
+
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_CREATED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=67890, type="dialog"),
+                body=MAXMessageBody(
+                    text="Смотри фото",
+                    mid="msg_img_001",
+                    attachments=[
+                        MAXAttachment(
+                            type="image",
+                            payload=MAXAttachmentPayload(
+                                url="https://cdn.max.ru/image/photo.jpg",
+                                token="img_token_abc",
+                            ),
+                        )
+                    ],
+                ),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "Смотри фото" in result["message"]
+        assert "🖼 [Изображение]" in result["message"]
+        assert len(result["attachments"]) == 1
+        assert result["attachments"][0]["type"] == "image"
+
+    def test_file_message_to_hermes(self):
+        """Test that file attachment is converted correctly."""
+        from src.models import MAXAttachment, MAXAttachmentPayload
+
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_CREATED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=67890, type="dialog"),
+                body=MAXMessageBody(
+                    text="Вот документ",
+                    mid="msg_file_001",
+                    attachments=[
+                        MAXAttachment(
+                            type="file",
+                            payload=MAXAttachmentPayload(
+                                url="https://cdn.max.ru/files/report.pdf",
+                                token="file_token_xyz",
+                            ),
+                        )
+                    ],
+                ),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "Вот документ" in result["message"]
+        assert "📎 [Файл: Файл]" in result["message"]  # name not in payload, default
+        assert len(result["attachments"]) == 1
+        assert result["attachments"][0]["type"] == "file"
+
+    def test_multiple_attachments(self):
+        """Test message with multiple attachments (image + file)."""
+        from src.models import MAXAttachment, MAXAttachmentPayload
+
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_CREATED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=67890, type="dialog"),
+                body=MAXMessageBody(
+                    text="Фото и документ",
+                    mid="msg_multi_001",
+                    attachments=[
+                        MAXAttachment(
+                            type="image",
+                            payload=MAXAttachmentPayload(
+                                url="https://cdn.max.ru/image/photo.jpg",
+                                token="img_token_1",
+                            ),
+                        ),
+                        MAXAttachment(
+                            type="file",
+                            payload=MAXAttachmentPayload(
+                                url="https://cdn.max.ru/files/doc.pdf",
+                                token="file_token_1",
+                            ),
+                        ),
+                    ],
+                ),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "Фото и документ" in result["message"]
+        assert "🖼 [Изображение]" in result["message"]
+        assert "📎 [Файл: Файл]" in result["message"]
+        assert len(result["attachments"]) == 2
+
+    # ── Group chat tests ────────────────────────────────────────────────────
+
+    def test_group_message_uses_chat_id(self):
+        """Test that group messages include chat_id for response routing."""
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_CREATED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=999888777, type="group", chat_type="group"),
+                body=MAXMessageBody(text="Привет всем!", mid="msg_group_001"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert result["chat_id"] == "999888777"
+        assert result["user_id"] == "12345"
+        assert result["message"] == "Привет всем!"
+
+    def test_group_response_uses_chat_id(self):
+        """Test hermes_response_to_max_message routes to chat_id for groups."""
+        response = {"message": "Ответ для группы"}
+        result = MessageConverter.hermes_response_to_max_message(
+            response, chat_id=999888777, user_id=None
+        )
+        assert result["chat_id"] == 999888777
+        assert "user_id" not in result
+
+    def test_dm_response_uses_user_id(self):
+        """Test hermes_response_to_max_message routes to user_id for DMs."""
+        response = {"message": "Ответ для пользователя"}
+        result = MessageConverter.hermes_response_to_max_message(
+            response, chat_id=None, user_id=12345
+        )
+        assert result["user_id"] == 12345
+        assert "chat_id" not in result
+
+    def test_user_added_event(self):
+        """Test user_added event (user joined group)."""
+        update = MAXUpdate(
+            update_type=UpdateType.USER_ADDED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=67890, name="Петр"),
+                recipient=MAXRecipient(chat_id=999888777, type="group", chat_type="group"),
+                body=MAXMessageBody(mid="msg_event_001"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "Пользователь добавлен в чат" in result["message"]
+        assert "Петр" in result["message"]
+        assert result["chat_id"] == "999888777"
+
+    def test_user_removed_event(self):
+        """Test user_removed event (user left group)."""
+        update = MAXUpdate(
+            update_type=UpdateType.USER_REMOVED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=67890, name="Петр"),
+                recipient=MAXRecipient(chat_id=999888777, type="group", chat_type="group"),
+                body=MAXMessageBody(mid="msg_event_002"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "Пользователь покинул чат" in result["message"]
+        assert "Петр" in result["message"]
+
+    def test_chat_title_changed_event(self):
+        """Test chat_title_changed event."""
+        update = MAXUpdate(
+            update_type=UpdateType.CHAT_TITLE_CHANGED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=999888777, type="group", chat_type="group"),
+                body=MAXMessageBody(mid="msg_event_003"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "Название чата изменено" in result["message"]
+
+    def test_channel_message(self):
+        """Test channel messages are handled like groups."""
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_CREATED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Автор"),
+                recipient=MAXRecipient(chat_id=111222333, type="channel", chat_type="channel"),
+                body=MAXMessageBody(text="Новость", mid="msg_ch_001"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert result["chat_id"] == "111222333"
+        assert result["message"] == "Новость"
+
+    def test_response_routing_fallback(self):
+        """Test fallback when neither chat_id nor user_id is set."""
+        response = {"message": "Тест"}
+        result = MessageConverter.hermes_response_to_max_message(
+            response, chat_id=None, user_id=None
+        )
+        assert "chat_id" not in result
+        assert "user_id" not in result
+        assert result["text"] == "Тест"

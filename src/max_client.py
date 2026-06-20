@@ -242,6 +242,37 @@ class MAXClient:
         async with session.post(url, data=data) as resp:
             return await resp.json(content_type=None)
 
+    async def upload_audio(
+        self,
+        audio_data: bytes,
+        file_name: str = "audio.ogg",
+        content_type: str = "audio/ogg",
+    ) -> dict[str, Any]:
+        """POST /uploads — upload an audio file (voice message).
+
+        MAX Bot API accepts audio in OGG/Opus format.
+        Returns dict with attachment_id / token on success.
+
+        Example response:
+            {"attachment_id": "abc123", "token": "xyz789"}
+        """
+        session = await self._get_session()
+        url = f"{self._base_url}/uploads"
+
+        data = aiohttp.FormData()
+        data.add_field("file", audio_data, filename=file_name, content_type=content_type)
+
+        logger.info("Uploading audio: %s (%d bytes)", file_name, len(audio_data))
+
+        async with session.post(url, data=data) as resp:
+            body = await resp.json(content_type=None)
+            if resp.status >= 400:
+                code = body.get("code", "unknown")
+                message = body.get("message", "Unknown error")
+                raise MAXApiError(code, message, resp.status)
+            logger.info("Audio upload response: %s", body)
+            return body
+
     async def upload_file(
         self,
         file_data: bytes,
@@ -268,6 +299,100 @@ class MAXClient:
                 raise MAXApiError(code, message, resp.status)
             logger.info("Upload response: %s", body)
             return body
+
+    # ── Send media messages ─────────────────────────────────────────────────
+
+    async def send_audio_message(
+        self,
+        chat_id: Optional[int] = None,
+        user_id: Optional[int] = None,
+        audio_token: str = "",
+        text: str = "",
+        reply_to: Optional[str] = None,
+    ) -> SendMessageResponse:
+        """POST /messages with audio attachment — send a voice message.
+
+        Args:
+            chat_id: Group chat ID (for groups)
+            user_id: User ID (for DMs)
+            audio_token: Token from upload_audio response
+            text: Optional caption text
+            reply_to: Message ID to reply to
+        """
+        attachments = [{
+            "type": "audio",
+            "payload": {"token": audio_token},
+        }]
+        return await self.send_message(
+            chat_id=chat_id,
+            user_id=user_id,
+            text=text,
+            attachments=attachments,
+            reply_to=reply_to,
+        )
+
+    async def send_image_message(
+        self,
+        chat_id: Optional[int] = None,
+        user_id: Optional[int] = None,
+        image_token: str = "",
+        text: str = "",
+        reply_to: Optional[str] = None,
+    ) -> SendMessageResponse:
+        """POST /messages with image attachment — send an image.
+
+        Args:
+            chat_id: Group chat ID (for groups)
+            user_id: User ID (for DMs)
+            image_token: Token from upload_image response
+            text: Optional caption text
+            reply_to: Message ID to reply to
+        """
+        attachments = [{
+            "type": "image",
+            "payload": {"token": image_token},
+        }]
+        return await self.send_message(
+            chat_id=chat_id,
+            user_id=user_id,
+            text=text,
+            attachments=attachments,
+            reply_to=reply_to,
+        )
+
+    async def send_file_message(
+        self,
+        chat_id: Optional[int] = None,
+        user_id: Optional[int] = None,
+        file_token: str = "",
+        file_name: str = "",
+        text: str = "",
+        reply_to: Optional[str] = None,
+    ) -> SendMessageResponse:
+        """POST /messages with file attachment — send a generic file.
+
+        Args:
+            chat_id: Group chat ID (for groups)
+            user_id: User ID (for DMs)
+            file_token: Token from upload_file response
+            file_name: Original filename (shown to user)
+            text: Optional caption text
+            reply_to: Message ID to reply to
+        """
+        payload = {"token": file_token}
+        if file_name:
+            payload["name"] = file_name
+        attachments = [{
+            "type": "file",
+            "payload": payload,
+        }]
+        return await self.send_message(
+            chat_id=chat_id,
+            user_id=user_id,
+            text=text,
+            attachments=attachments,
+            reply_to=reply_to,
+        )
 
     # ── Download attachments ────────────────────────────────────────────────
 
