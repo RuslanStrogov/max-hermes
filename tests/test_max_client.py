@@ -3,8 +3,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.max_client import MAXClient, MAXApiError
-from src.models import SendMessageResponse
+from max_shared.max_client import MAXClient, MAXApiError
+from max_shared.models import SendMessageResponse
 
 
 @pytest.fixture

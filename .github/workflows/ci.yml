@@ -38,7 +38,7 @@ jobs:
         run: |
           python -m pytest tests/ -v --tb=short
 
-      - name: Check code style (ruff)
+      - name: Check Python syntax
         run: |
-          pip install ruff
-          ruff check src/ tests/ || true
+          python -m py_compile src/main.py src/config.py src/max_client.py src/hermes_client.py src/converter.py src/webhook_server.py src/models.py
+          echo "All Python files compile OK"
