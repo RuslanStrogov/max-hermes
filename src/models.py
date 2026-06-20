@@ -21,6 +21,9 @@ class UpdateType(str, Enum):
     BOT_REMOVED = "bot_removed"
     BOT_STARTED = "bot_started"
     CHAT_CREATED = "chat_created"
+    USER_ADDED = "user_added"
+    USER_REMOVED = "user_removed"
+    CHAT_TITLE_CHANGED = "chat_title_changed"
 
 
 class MAXUser(BaseModel):

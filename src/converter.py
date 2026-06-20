@@ -31,6 +31,9 @@ class MessageConverter:
             UpdateType.BOT_ADDED: lambda u: MessageConverter._bot_added_to_hermes(u),
             UpdateType.BOT_REMOVED: lambda u: MessageConverter._bot_removed_to_hermes(u),
             UpdateType.CHAT_CREATED: lambda u: MessageConverter._chat_created_to_hermes(u),
+            UpdateType.USER_ADDED: lambda u: MessageConverter._user_added_to_hermes(u),
+            UpdateType.USER_REMOVED: lambda u: MessageConverter._user_removed_to_hermes(u),
+            UpdateType.CHAT_TITLE_CHANGED: lambda u: MessageConverter._chat_title_changed_to_hermes(u),
         }
 
         handler = handlers.get(update.update_type)
@@ -289,6 +292,78 @@ class MessageConverter:
         }
 
     @staticmethod
+    def _user_added_to_hermes(update: MAXUpdate) -> dict[str, Any]:
+        """Convert user_added event to Hermes payload (user joined group)."""
+        message = update.message
+        if message:
+            return {
+                "message": f"[Пользователь добавлен в чат: {message.sender.name}]",
+                "chat_id": str(message.recipient.chat_id),
+                "user_id": str(message.sender.user_id),
+                "user_name": message.sender.name,
+                "platform": "max",
+                "raw_update": {
+                    "update_type": "user_added",
+                    "timestamp": update.timestamp,
+                },
+            }
+        return {
+            "message": "[Пользователь добавлен в чат]",
+            "chat_id": "unknown",
+            "user_id": "unknown",
+            "user_name": "Unknown",
+            "platform": "max",
+        }
+
+    @staticmethod
+    def _user_removed_to_hermes(update: MAXUpdate) -> dict[str, Any]:
+        """Convert user_removed event to Hermes payload (user left group)."""
+        message = update.message
+        if message:
+            return {
+                "message": f"[Пользователь покинул чат: {message.sender.name}]",
+                "chat_id": str(message.recipient.chat_id),
+                "user_id": str(message.sender.user_id),
+                "user_name": message.sender.name,
+                "platform": "max",
+                "raw_update": {
+                    "update_type": "user_removed",
+                    "timestamp": update.timestamp,
+                },
+            }
+        return {
+            "message": "[Пользователь покинул чат]",
+            "chat_id": "unknown",
+            "user_id": "unknown",
+            "user_name": "Unknown",
+            "platform": "max",
+        }
+
+    @staticmethod
+    def _chat_title_changed_to_hermes(update: MAXUpdate) -> dict[str, Any]:
+        """Convert chat_title_changed event to Hermes payload."""
+        message = update.message
+        if message:
+            return {
+                "message": "[Название чата изменено]",
+                "chat_id": str(message.recipient.chat_id),
+                "user_id": str(message.sender.user_id),
+                "user_name": message.sender.name,
+                "platform": "max",
+                "raw_update": {
+                    "update_type": "chat_title_changed",
+                    "timestamp": update.timestamp,
+                },
+            }
+        return {
+            "message": "[Название чата изменено]",
+            "chat_id": "unknown",
+            "user_id": "unknown",
+            "user_name": "Unknown",
+            "platform": "max",
+        }
+
+    @staticmethod
     def _format_attachments(attachments: list[dict[str, Any]]) -> str:
         """Format MAX attachments for Hermes message text with URLs."""
         parts = []
@@ -336,7 +411,7 @@ class MessageConverter:
     @staticmethod
     def hermes_response_to_max_message(
         response: dict[str, Any],
-        chat_id: int,
+        chat_id: Optional[int] = None,
         user_id: Optional[int] = None,
     ) -> dict[str, Any]:
         """Convert Hermes agent response to MAX API message format.
@@ -356,7 +431,7 @@ class MessageConverter:
         # For dialogs, user_id is required; for groups, chat_id
         if user_id is not None and user_id > 0:
             payload["user_id"] = user_id
-        elif chat_id > 0:
+        elif chat_id is not None and chat_id > 0:
             payload["chat_id"] = chat_id
         else:
             logger.warning("Neither user_id nor chat_id available for response")

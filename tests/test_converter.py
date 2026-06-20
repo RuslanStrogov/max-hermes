@@ -374,3 +374,119 @@ class TestMessageConverter:
         assert "🖼 [Изображение]" in result["message"]
         assert "📎 [Файл: Файл]" in result["message"]
         assert len(result["attachments"]) == 2
+
+    # ── Group chat tests ────────────────────────────────────────────────────
+
+    def test_group_message_uses_chat_id(self):
+        """Test that group messages include chat_id for response routing."""
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_CREATED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=999888777, type="group", chat_type="group"),
+                body=MAXMessageBody(text="Привет всем!", mid="msg_group_001"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert result["chat_id"] == "999888777"
+        assert result["user_id"] == "12345"
+        assert result["message"] == "Привет всем!"
+
+    def test_group_response_uses_chat_id(self):
+        """Test hermes_response_to_max_message routes to chat_id for groups."""
+        response = {"message": "Ответ для группы"}
+        result = MessageConverter.hermes_response_to_max_message(
+            response, chat_id=999888777, user_id=None
+        )
+        assert result["chat_id"] == 999888777
+        assert "user_id" not in result
+
+    def test_dm_response_uses_user_id(self):
+        """Test hermes_response_to_max_message routes to user_id for DMs."""
+        response = {"message": "Ответ для пользователя"}
+        result = MessageConverter.hermes_response_to_max_message(
+            response, chat_id=None, user_id=12345
+        )
+        assert result["user_id"] == 12345
+        assert "chat_id" not in result
+
+    def test_user_added_event(self):
+        """Test user_added event (user joined group)."""
+        update = MAXUpdate(
+            update_type=UpdateType.USER_ADDED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=67890, name="Петр"),
+                recipient=MAXRecipient(chat_id=999888777, type="group", chat_type="group"),
+                body=MAXMessageBody(mid="msg_event_001"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "Пользователь добавлен в чат" in result["message"]
+        assert "Петр" in result["message"]
+        assert result["chat_id"] == "999888777"
+
+    def test_user_removed_event(self):
+        """Test user_removed event (user left group)."""
+        update = MAXUpdate(
+            update_type=UpdateType.USER_REMOVED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=67890, name="Петр"),
+                recipient=MAXRecipient(chat_id=999888777, type="group", chat_type="group"),
+                body=MAXMessageBody(mid="msg_event_002"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "Пользователь покинул чат" in result["message"]
+        assert "Петр" in result["message"]
+
+    def test_chat_title_changed_event(self):
+        """Test chat_title_changed event."""
+        update = MAXUpdate(
+            update_type=UpdateType.CHAT_TITLE_CHANGED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Иван"),
+                recipient=MAXRecipient(chat_id=999888777, type="group", chat_type="group"),
+                body=MAXMessageBody(mid="msg_event_003"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert "Название чата изменено" in result["message"]
+
+    def test_channel_message(self):
+        """Test channel messages are handled like groups."""
+        update = MAXUpdate(
+            update_type=UpdateType.MESSAGE_CREATED,
+            message=MAXMessage(
+                sender=MAXUser(user_id=12345, name="Автор"),
+                recipient=MAXRecipient(chat_id=111222333, type="channel", chat_type="channel"),
+                body=MAXMessageBody(text="Новость", mid="msg_ch_001"),
+                timestamp=1737500130100,
+            ),
+            timestamp=1737500130100,
+        )
+        result = MessageConverter.max_update_to_hermes_message(update)
+        assert result is not None
+        assert result["chat_id"] == "111222333"
+        assert result["message"] == "Новость"
+
+    def test_response_routing_fallback(self):
+        """Test fallback when neither chat_id nor user_id is set."""
+        response = {"message": "Тест"}
+        result = MessageConverter.hermes_response_to_max_message(
+            response, chat_id=None, user_id=None
+        )
+        assert "chat_id" not in result
+        assert "user_id" not in result
+        assert result["text"] == "Тест"
