@@ -85,10 +85,15 @@
 | Обработка всех типов событий MAX API | ✅ |
 | Скачивание вложений (изображения, видео, аудио, файлы) | ✅ |
 | Отправка изображений через upload API | ✅ |
+| Отправка файлов через upload API | ✅ |
+| Отправка голосовых сообщений (audio attachment) | ✅ |
 | Редактирование сообщений (PUT /messages/{id}) | ✅ |
 | Удаление сообщений (DELETE /messages/{id}) | ✅ |
 | Long Polling (GET /updates) | ✅ |
 | Webhook управление (POST/GET/DELETE /subscriptions) | ✅ |
+| Групповые чаты (group/channel/supergroup) | ✅ |
+| Маршрутизация ответов: chat_id для групп, user_id для DM | ✅ |
+| События групп: user_added, user_removed, chat_title_changed | ✅ |
 | Автодеплой через GitHub Actions | ✅ |
 | CI (тесты на Python 3.11, 3.12) | ✅ |
 | Автоматические релизы (GitHub Release) | ✅ |
@@ -97,11 +102,7 @@
 
 | Фича | Статус | Примечание |
 |------|--------|------------|
-| Отправка файлов пользователю | 🔜 | Upload работает, нужен формат attachment |
-| Отправка голосовых сообщений | 🔜 | Нужен формат `audio` attachment |
 | Отправка геолокации | 🔜 | Нужен формат `location` attachment |
-| Групповые чаты | 🔜 | Нужна адаптация `chat_id` вместо `user_id` |
-| Каналы | 🔜 | Аналогично групповым чатам |
 | Стикеры | ❓ | Нет информации о поддержке в API |
 | Read receipts (галочки) | ❌ | Не поддерживается MAX Bot API |
 | Menu button (как в Telegram) | ❌ | Нет аналога `/setMyCommands` в MAX |
