@@ -9,11 +9,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    # Skip deploy if secrets are not configured
+    # To enable deploy, set DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY in repo secrets
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Deploy to server via SSH
+        if: ${{ secrets.DEPLOY_HOST != '' }}
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -30,3 +33,9 @@ jobs:
             sudo systemctl restart max-bridge
             sleep 3
             sudo systemctl status max-bridge --no-pager
+
+      - name: Skip deploy (no secrets)
+        if: ${{ secrets.DEPLOY_HOST == '' }}
+        run: |
+          echo "⚠️ Deploy skipped — DEPLOY_HOST secret not configured"
+          echo "To enable auto-deploy, set DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY in repo settings"
