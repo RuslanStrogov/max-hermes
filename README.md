@@ -2,19 +2,20 @@
 
   <img src="banner.png" alt="MAX Hermes Bridge Banner" width="100%"/>
 
-  <p>
-    <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" alt="Python"/>
-    <img src="https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi&logoColor=white" alt="FastAPI"/>
-    <img src="https://img.shields.io/badge/Hermes-Agent-8B5CF6" alt="Hermes"/>
-    <img src="https://img.shields.io/badge/Docker-🐳-2496ED?logo=docker&logoColor=white" alt="Docker"/>
-    <img src="https://img.shields.io/badge/License-MIT-22C55E" alt="MIT"/>
-  </p>
+  <h3>🛠️ Технологии</h3>
 
   <p>
-    <img src="https://img.shields.io/badge/Webhook-✅-34D399" alt="Webhook"/>
-    <img src="https://img.shields.io/badge/CLI%20Bridge-✅-34D399" alt="CLI"/>
-    <img src="https://img.shields.io/badge/Docker-✅-34D399" alt="Docker"/>
-    <img src="https://img.shields.io/badge/systemd-✅-34D399" alt="systemd"/>
+    <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" alt="Python"/>
+    <img src="https://img.shields.io/badge/aiohttp-3.9+-2C5BB4?logo=aiohttp&logoColor=white" alt="aiohttp"/>
+    <img src="https://img.shields.io/badge/Pydantic-2.0+-E92063?logo=pydantic&logoColor=white" alt="Pydantic"/>
+    <img src="https://img.shields.io/badge/MAX-Bot%20API-6366F1?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzYzNjZmMSI+PHBhdGggZD0iTTEyIDJMMTggOEwxOCAyMkw2IDIyTDYgOEwxMiAyWiIvPjwvc3ZnPg==&logoColor=white" alt="MAX"/>
+    <img src="https://img.shields.io/badge/Hermes-Agent-8B5CF6" alt="Hermes"/>
+    <img src="https://img.shields.io/badge/Nginx-009639?logo=nginx&logoColor=white" alt="Nginx"/>
+    <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" alt="Docker"/>
+    <img src="https://img.shields.io/badge/systemd-303030?logo=systemd&logoColor=white" alt="systemd"/>
+    <img src="https://img.shields.io/badge/GitHub%20Actions-2088FF?logo=githubactions&logoColor=white" alt="GitHub Actions"/>
+    <img src="https://img.shields.io/badge/Let's%20Encrypt-003A70?logo=letsencrypt&logoColor=white" alt="Let's Encrypt"/>
+    <img src="https://img.shields.io/badge/License-MIT-22C55E" alt="MIT"/>
   </p>
 
   <h3>Мост между <a href="https://dev.max.ru">MAX Bot API</a> и <a href="https://hermes-agent.nousresearch.com">Hermes Agent</a></h3>
