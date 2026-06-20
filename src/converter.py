@@ -299,12 +299,12 @@ class MessageConverter:
             token = payload.get("token", "")
 
             if att_type == "image":
-                label = "[Изображение]"
+                label = "🖼 [Изображение]"
                 if url:
                     label += f"\nURL: {url}"
                 parts.append(label)
             elif att_type == "video":
-                label = "[Видео]"
+                label = "🎬 [Видео]"
                 if url:
                     label += f"\nURL: {url}"
                 parts.append(label)
@@ -312,12 +312,10 @@ class MessageConverter:
                 label = "🎤 [Голосовое сообщение]"
                 if url:
                     label += f"\nURL: {url}"
-                if token:
-                    label += f"\nToken: {token[:20]}..."
                 parts.append(label)
             elif att_type == "file":
                 name = att.get("name", "Файл")
-                label = f"[Файл: {name}]"
+                label = f"📎 [Файл: {name}]"
                 if url:
                     label += f"\nURL: {url}"
                 parts.append(label)
