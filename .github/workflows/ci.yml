@@ -40,5 +40,5 @@ jobs:
 
       - name: Check Python syntax
         run: |
-          python -m py_compile src/main.py src/config.py src/max_client.py src/hermes_client.py src/converter.py src/webhook_server.py src/models.py
+          python -m py_compile src/main.py src/config.py src/hermes_client.py src/webhook_server.py
           echo "All Python files compile OK"
