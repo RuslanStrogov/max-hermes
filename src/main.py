@@ -143,7 +143,7 @@ async def main() -> None:
         logger.error("Failed to connect to MAX API: %s", e)
         sys.exit(1)
 
-    bridge_url = f"http://localhost:{config.bridge_port}/webhook"
+    bridge_url = "https://max.ai.strogov.com/webhook"
     try:
         await setup_max_webhook(max_client, bridge_url)
     except Exception as e:
