@@ -144,9 +144,11 @@ class WebhookServer:
                 recipient = update.message.recipient
                 sender = update.message.sender
 
-                target_chat_id, target_user_id = (
-                    MessageConverter.determine_reply_target(recipient, sender)
-                )
+                # MAX API requires chat_id for sending messages.
+                # For group chats: use recipient.chat_id.
+                # For DM (dialog): recipient.chat_id == sender.user_id (the chat owner).
+                target_chat_id = recipient.chat_id
+                target_user_id = None
 
                 logger.info(
                     "Sending response to MAX: chat_id=%s, user_id=%s, text_len=%d",
