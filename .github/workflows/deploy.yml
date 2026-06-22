@@ -1,19 +1,9 @@
 name: Deploy
 
-# Temporarily disabled — network is closed
-# To enable: uncomment the on: section and set DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY secrets
-
-# on:
-#   push:
-#     branches: [main]
-#     tags: ["v*"]
-
-# Deploy disabled — network is closed
-# on:
-#   push:
-#     branches: [main]
-#     tags: ["v*"]
-on: []
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
 
 jobs:
   deploy:
@@ -30,7 +20,7 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             set -e
-            cd /opt/max-hermes
+            cd /mnt/data/projects/max-hermes
             git fetch origin
             git checkout main
             git pull origin main
