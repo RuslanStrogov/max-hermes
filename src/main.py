@@ -143,6 +143,18 @@ async def main() -> None:
         logger.error("Failed to connect to MAX API: %s", e)
         sys.exit(1)
 
+    # Register bot commands (menu button)
+    default_commands = [
+        {"name": "start", "description": "Начать диалог с ботом"},
+        {"name": "help", "description": "Помощь и информация о боте"},
+        {"name": "about", "description": "О боте и его возможностях"},
+    ]
+    try:
+        await max_client.set_commands(default_commands)
+        logger.info("Bot commands registered successfully: %d commands", len(default_commands))
+    except Exception as e:
+        logger.warning("Failed to register bot commands: %s (non-fatal)", e)
+
     bridge_url = "https://max.ai.strogov.com/webhook"
     try:
         await setup_max_webhook(max_client, bridge_url)
