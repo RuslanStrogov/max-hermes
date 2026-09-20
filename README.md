@@ -2,26 +2,34 @@
 
   <img src="banner.png" alt="MAX Hermes Bridge Banner" width="100%"/>
 
-  <h3>🛠️ Технологии</h3>
-
-  <p>
-    <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" alt="Python"/>
-    <img src="https://img.shields.io/badge/aiohttp-3.9+-2C5BB4?logo=aiohttp&logoColor=white" alt="aiohttp"/>
-    <img src="https://img.shields.io/badge/Pydantic-2.0+-E92063?logo=pydantic&logoColor=white" alt="Pydantic"/>
-    <img src="https://img.shields.io/badge/MAX-Bot%20API-6366F1?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzYzNjZmMSI+PHBhdGggZD0iTTEyIDJMMTggOEwxOCAyMkw2IDIyTDYgOEwxMiAyWiIvPjwvc3ZnPg==&logoColor=white" alt="MAX"/>
-    <img src="https://img.shields.io/badge/Hermes-Agent-8B5CF6" alt="Hermes"/>
-    <img src="https://img.shields.io/badge/Nginx-009639?logo=nginx&logoColor=white" alt="Nginx"/>
-    <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" alt="Docker"/>
-    <img src="https://img.shields.io/badge/systemd-303030?logo=systemd&logoColor=white" alt="systemd"/>
-    <img src="https://img.shields.io/badge/GitHub%20Actions-2088FF?logo=githubactions&logoColor=white" alt="GitHub Actions"/>
-    <img src="https://img.shields.io/badge/Let's%20Encrypt-003A70?logo=letsencrypt&logoColor=white" alt="Let's Encrypt"/>
-    <img src="https://img.shields.io/badge/License-MIT-22C55E" alt="MIT"/>
-  </p>
+  <br/>
+  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/aiohttp-3.9+-2C5BB4?logo=aiohttp&logoColor=white" alt="aiohttp"/>
+  <img src="https://img.shields.io/badge/Pydantic-2.0+-E92063?logo=pydantic&logoColor=white" alt="Pydantic"/>
+  <img src="https://img.shields.io/badge/MAX-Bot%20API-6366F1?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzYzNjZmMSI+PHBhdGggZD0iTTEyIDJMMTggOEwxOCAyMkw2IDIyTDYgOEwxMiAyWiIvPjwvc3ZnPg==&logoColor=white" alt="MAX"/>
+  <img src="https://img.shields.io/badge/Hermes-Agent-8B5CF6" alt="Hermes"/>
+  <img src="https://img.shields.io/badge/Nginx-009639?logo=nginx&logoColor=white" alt="Nginx"/>
+  <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" alt="Docker"/>
+  <img src="https://img.shields.io/badge/systemd-303030?logo=systemd&logoColor=white" alt="systemd"/>
+  <img src="https://img.shields.io/badge/GitHub%20Actions-2088FF?logo=githubactions&logoColor=white" alt="GitHub Actions"/>
+  <img src="https://img.shields.io/badge/Let's%20Encrypt-003A70?logo=letsencrypt&logoColor=white" alt="Let's Encrypt"/>
+  <img src="https://img.shields.io/badge/License-MIT-22C55E" alt="MIT"/>
 
   <h3>Мост между <a href="https://dev.max.ru">MAX Bot API</a> и <a href="https://hermes-agent.nousresearch.com">Hermes Agent</a></h3>
   <p>Python-мост через CLI с поддержкой webhook, Docker и systemd</p>
 
-  <p><sub>🎨 Designed by <a href="https://br-design.ru/">BR-DESIGN</a></sub></p>
+  <table>
+    <tr>
+      <td width="50%" align="center">
+        <h4>🇷🇺 Российская разработка</h4>
+        <p>Сделано в Кремёнках · Open source · MIT</p>
+      </td>
+      <td width="50%" align="center">
+        <h4>🎨 Designed by <a href="https://br-design.ru/">BR-DESIGN</a></h4>
+        <p>Дизайн, брендинг, визуальный стиль</p>
+      </td>
+    </tr>
+  </table>
 
 </div>
 
@@ -31,17 +39,17 @@
 
 - [Архитектура](#-архитектура)
 - [Возможности](#-возможности)
+- [Bot Commands Menu](#-bot-commands-menu)
 - [Требования](#-требования)
 - [Установка](#-установка)
 - [Настройка](#-настройка)
 - [Запуск](#-запуск)
 - [Структура проекта](#-структура-проекта)
 - [Переменные окружения](#-переменные-окружения)
-- [Roadmap](#-roadmap)
-- [Релизы и CI/CD](#-релизы-и-cicd)
 - [Сравнение с Telegram Bot API](#-сравнение-с-telegram-bot-api)
 - [Тестирование](#-тестирование)
 - [Устранение неполадок](#-устранение-неполадок)
+- [Релизы и CI/CD](#-релизы-и-cicd)
 - [Лицензия](#-лицензия)
 
 ---
@@ -57,11 +65,12 @@
 └──────────┘              └─────────────┘              └──────────────┘
 ```
 
-1. Пользователь пишет боту в MAX
+1. Пользователь пишет боту в MAX (или выбирает команду из меню)
 2. MAX API отправляет webhook на мост
-3. Мост показывает индикатор «Печатает...»
-4. Мост вызывает Hermes Agent через CLI
-5. Ответ Hermes отправляется обратно в MAX через Bot API
+3. Мост обрабатывает команды `/start`, `/help`, `/about` напрямую
+4. Остальные сообщения — мост показывает индикатор «Печатает...»
+5. Мост вызывает Hermes Agent через CLI
+6. Ответ Hermes отправляется обратно в MAX через Bot API
 
 > **Хотите интеграцию уровня Hermes (send_message, cron, sessions)?** Используйте [MAX Hermes Plugin](https://github.com/RuslanStrogov/max-hermes-plugin) — нативный платформенный адаптер для Hermes Gateway.
 
@@ -74,6 +83,9 @@
 | Приём сообщений от MAX через webhook | ✅ |
 | Отправка ответов в MAX | ✅ |
 | Индикатор «Печатает...» пока агент думает | ✅ |
+| **Bot Commands Menu (/start, /help, /about)** | ✅ |
+| **Регистрация команд при старте (PATCH /me/commands)** | ✅ |
+| **Обработка /команд без вызова Hermes** | ✅ |
 | Inline keyboard (кнопки в сообщении) | ✅ |
 | Callback от кнопок | ✅ |
 | Поддержка нескольких пользователей | ✅ |
@@ -99,14 +111,38 @@
 | CI (тесты на Python 3.11, 3.12) | ✅ |
 | Автоматические релизы (GitHub Release) | ✅ |
 
-### Roadmap
+## 🎛️ Bot Commands Menu
 
-| Фича | Статус | Примечание |
-|------|--------|------------|
-| Отправка геолокации | 🔜 | Нужен формат `location` attachment |
-| Стикеры | ❓ | Нет информации о поддержке в API |
-| Read receipts (галочки) | ❌ | Не поддерживается MAX Bot API |
-| Menu button (как в Telegram) | ❌ | Нет аналога `/setMyCommands` в MAX |
+При старте мост автоматически регистрирует команды бота через `PATCH /me/commands` на `platform-api2.max.ru`.
+
+**Зарегистрированные команды:**
+
+| Команда | Описание |
+|---------|----------|
+| `/start` | Начать диалог с ботом |
+| `/help` | Помощь и информация о боте |
+| `/about` | О боте и его возможностях |
+
+Команды обрабатываются **напрямую в bridge**, без вызова Hermes AI.
+
+### Пример использования
+
+1. Пользователь открывает диалог с ботом в MAX
+2. Нажимает кнопку вызова команд (рядом с полем ввода)
+3. Выбирает `/help`
+4. Мост сразу отвечает справкой — без ожидания Hermes
+
+### Регистрация при старте
+
+```python
+# main.py — добавляется после get_bot_info()
+default_commands = [
+    {"name": "start", "description": "Начать диалог с ботом"},
+    {"name": "help", "description": "Помощь и информация о боте"},
+    {"name": "about", "description": "О боте и его возможностях"},
+]
+await max_client.set_commands(default_commands)
+```
 
 ## 📋 Требования
 
@@ -237,10 +273,9 @@ max-hermes/
 ├── src/
 │   ├── main.py              # Точка входа, цикл событий
 │   ├── config.py            # Загрузка конфигурации из .env
-│   ├── max_client.py        # HTTP-клиент MAX Bot API
 │   ├── hermes_client.py     # Клиент Hermes (через CLI)
 │   ├── converter.py         # Конвертация форматов данных
-│   ├── webhook_server.py    # HTTP-сервер для webhook от MAX
+│   ├── webhook_server.py    # HTTP-сервер для webhook + обработка команд
 │   └── models.py            # Pydantic модели данных
 ├── systemd/
 │   └── max-bridge.service   # Unit-файл systemd
@@ -273,7 +308,7 @@ max-hermes/
 | Send/Edit/Delete messages | ✅ | ✅ |
 | Typing indicator | ✅ | ✅ |
 | Read receipts | ✅ | ❌ |
-| Bot commands menu | ✅ | ❌ |
+| **Bot commands menu** | ✅ | ✅ **(добавлено)** |
 | Send images/files | ✅ | ✅ (через upload) |
 | Send location | ✅ | ❓ |
 | Send stickers | ✅ | ❓ |
@@ -292,9 +327,15 @@ python -m pytest tests/ -v
 
 ### Мост не получает сообщения от MAX
 
-1. Проверьте регистрацию webhook: `curl -H "Authorization: TOKEN" https://platform-api.max.ru/subscriptions`
+1. Проверьте регистрацию webhook: `curl -H "Authorization: ***" https://platform-api.max.ru/subscriptions`
 2. Проверьте что порт открыт: `curl https://your-domain.com/health`
 3. Проверьте логи: `sudo journalctl -u max-bridge -f`
+
+### Команды не отображаются в MAX
+
+1. Убедитесь что НЕ используется `platform-api2.max.ru` — команды регистрируются на нём через `set_commands()`
+2. Проверьте логи: `sudo journalctl -u max-bridge -f`
+3. Если команды не появились — перезапустите мост
 
 ### Hermes не отвечает
 
@@ -355,6 +396,7 @@ git push origin main --tags
 | 1 | **Санитайзинг `attachments`** — если MAX присылает `null`, Pydantic v2 падает. Теперь `null` → `[]` до парсинга | `webhook_server.py` |
 | 2 | **Системный промпт смягчён** — убран запрет инструментов и "1-3 предложения". Бот может использовать Hermes полноценно | `webhook_server.py` |
 | 3 | **Чистка ответа** — добавил фильтр префиксов `"You are Hermes Agent"`, `"Available tools:"`, `"Доступные инструменты:"` и `"Ты — Hermes Agent"` | `hermes_client.py` |
+| 4 | **Bot Commands Menu** — регистрация `/start`, `/help`, `/about` через `PATCH /me/commands` + прямая обработка без Hermes | `main.py`, `webhook_server.py` |
 
 ## 📄 Лицензия
 
@@ -367,6 +409,7 @@ MIT License. См. [LICENSE](LICENSE).
 | Проект | Описание |
 |--------|----------|
 | [MAX Hermes Plugin](https://github.com/RuslanStrogov/max-hermes-plugin) | Нативный платформенный плагин для Hermes Gateway. Прямая интеграция MAX без моста. |
+| [MAX Shared](https://github.com/RuslanStrogov/max-shared) | Общая библиотека: MAXClient, модели, конвертер, markdown |
 
 ## 📢 Пресс-релизы
 
