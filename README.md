@@ -348,6 +348,14 @@ git tag -a v1.2.0 -m "Release v1.2.0: описание"
 git push origin main --tags
 ```
 
+## 📄 Recent Fixes
+
+| # | Фикс | Файл |
+|---|------|------|
+| 1 | **Санитайзинг `attachments`** — если MAX присылает `null`, Pydantic v2 падает. Теперь `null` → `[]` до парсинга | `webhook_server.py` |
+| 2 | **Системный промпт смягчён** — убран запрет инструментов и "1-3 предложения". Бот может использовать Hermes полноценно | `webhook_server.py` |
+| 3 | **Чистка ответа** — добавил фильтр префиксов `"You are Hermes Agent"`, `"Available tools:"`, `"Доступные инструменты:"` и `"Ты — Hermes Agent"` | `hermes_client.py` |
+
 ## 📄 Лицензия
 
 MIT License. См. [LICENSE](LICENSE).
