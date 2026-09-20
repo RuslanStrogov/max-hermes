@@ -25,12 +25,8 @@ DEDUP_MAX_SIZE = 1000
 
 # Default system prompt / role for the bridge bot
 DEFAULT_SYSTEM_PROMPT = (
-    "Ты — MAX Bridge Bot. Твои правила:\n"
-    "1. Отвечай КРАТКО (1-3 предложения).\n"
-    "2. НЕ запускай инструменты — ты bridge, а не полноценный агент.\n"
-    "3. На команду /status ответь: 'Bridge работает. Бот @username.'\n"
-    "4. На любые вопросы отвечай максимально коротко.\n"
-    "5. Общайся на русском."
+    "Ты — MAX Bridge Bot. Общайся на русском. "
+    "Будь полезным и отвечай по существу."
 )
 
 
@@ -99,6 +95,11 @@ class WebhookServer:
             return web.json_response({"error": "Invalid JSON"}, status=400)
 
         logger.debug("Raw MAX payload: %s", raw_body[:2000])
+
+        # Sanitize: ensure attachments is never None (Pydantic v2 fails on null with List)
+        if data.get("message", {}).get("body", {}).get("attachments") is None:
+            if "message" in data and "body" in data["message"]:
+                data["message"]["body"]["attachments"] = []
 
         try:
             update = MAXUpdate(**data)

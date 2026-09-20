@@ -15,7 +15,11 @@ _SESSION_LINE_PREFIXES = (
     "Session: ",
     "Session ID: ",
     "Session saved as: ",
-    "---",  # separator lines
+    "---",
+    "You are Hermes Agent",
+    "Ты — Hermes Agent",
+    "Available tools:",
+    "Доступные инструменты:",
 )
 
 
