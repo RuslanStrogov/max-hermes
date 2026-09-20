@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any, Optional
 
 from aiohttp import web
@@ -17,6 +18,20 @@ from src.config import Config
 from src.hermes_client import HermesClient, HermesClientError
 
 logger = logging.getLogger(__name__)
+
+# Deduplication constants
+DEDUP_WINDOW = 300  # 5 minutes
+DEDUP_MAX_SIZE = 1000
+
+# Default system prompt / role for the bridge bot
+DEFAULT_SYSTEM_PROMPT = (
+    "Ты — MAX Bridge Bot. Твои правила:\n"
+    "1. Отвечай КРАТКО (1-3 предложения).\n"
+    "2. НЕ запускай инструменты — ты bridge, а не полноценный агент.\n"
+    "3. На команду /status ответь: 'Bridge работает. Бот @username.'\n"
+    "4. На любые вопросы отвечай максимально коротко.\n"
+    "5. Общайся на русском."
+)
 
 
 class WebhookServer:
@@ -35,6 +50,7 @@ class WebhookServer:
         self._app = web.Application()
         self._app["hermes_client"] = hermes_client
         self._app["max_client"] = max_client
+        self._processed_ids: dict[str, float] = {}
         self._setup_routes()
 
     def _setup_routes(self) -> None:
@@ -97,6 +113,12 @@ class WebhookServer:
             update.message.recipient.chat_id if update.message else "N/A",
         )
 
+        # Deduplication: extract message ID from raw payload
+        raw_msg = data.get("message", {}) if data.get("message") else {}
+        msg_id = raw_msg.get("body", {}).get("mid", "") if raw_msg else ""
+        if msg_id and self._is_duplicate(msg_id):
+            return web.json_response({"ok": True, "dedup": True})
+
         # Access control
         if self._config.allowed_users and update.message:
             if update.message.sender.user_id not in self._config.allowed_users:
@@ -132,7 +154,8 @@ class WebhookServer:
                 if content_items:
                     hermes_payload["content_items"] = content_items
 
-            # Send to Hermes
+            # Send to Hermes with role instructions
+            hermes_payload["system_prompt"] = DEFAULT_SYSTEM_PROMPT
             hermes_response = await self._hermes.send_message(**hermes_payload)
 
             # Send response back to MAX
@@ -245,3 +268,18 @@ class WebhookServer:
         For now, accept all requests (MAX webhook auth is via URL + token).
         """
         return True
+
+    def _is_duplicate(self, msg_id: str) -> bool:
+        """Check if a message ID was already processed (dedup within window)."""
+        now = time.time()
+        if msg_id in self._processed_ids:
+            logger.debug("Duplicate message %s — ignoring", msg_id)
+            return True
+        self._processed_ids[msg_id] = now
+        # Cleanup old entries when cache gets large
+        if len(self._processed_ids) > DEDUP_MAX_SIZE:
+            cutoff = now - DEDUP_WINDOW
+            self._processed_ids = {
+                k: v for k, v in self._processed_ids.items() if v > cutoff
+            }
+        return False

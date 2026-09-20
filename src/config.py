@@ -10,21 +10,25 @@ from dotenv import load_dotenv
 
 
 def _load_env() -> None:
-    """Load .env from project root or /etc/max-bridge/."""
+    """Load .env from project root or /etc/max-bridge/.
+
+    Uses override=True so values from .env take precedence over
+    systemd Environment= directives (which may set empty placeholders).
+    """
     # Try project root first
     project_env = Path(__file__).resolve().parent.parent / ".env"
     if project_env.exists():
-        load_dotenv(project_env)
+        load_dotenv(project_env, override=True)
         return
 
     # Try system config
     system_env = Path("/etc/max-bridge/.env")
     if system_env.exists():
-        load_dotenv(system_env)
+        load_dotenv(system_env, override=True)
         return
 
     # Try environment only
-    load_dotenv()
+    load_dotenv(override=True)
 
 
 _load_env()
