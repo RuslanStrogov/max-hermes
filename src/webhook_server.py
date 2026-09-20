@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
@@ -144,12 +145,15 @@ class WebhookServer:
             )
             return web.json_response({"ok": True, "skipped": True})
 
+        # Initialise keep-typing handle before try so except blocks can cancel it
+        typing_task: Optional[asyncio.Task] = None
+
         try:
-            # Send typing indicator
+            # Start keep-typing loop so the user sees continuous feedback
             if update.message:
                 recipient = update.message.recipient
-                await self._max.send_chat_action(
-                    chat_id=recipient.chat_id, action="typing_on"
+                typing_task = asyncio.create_task(
+                    self._keep_typing(chat_id=recipient.chat_id)
                 )
 
             # Download attachments
@@ -164,6 +168,11 @@ class WebhookServer:
             # Send to Hermes with role instructions
             hermes_payload["system_prompt"] = DEFAULT_SYSTEM_PROMPT
             hermes_response = await self._hermes.send_message(**hermes_payload)
+
+            # Cancel keep-typing – answer is ready
+            if typing_task:
+                typing_task.cancel()
+                typing_task = None
 
             # Send response back to MAX
             agent_text = hermes_response.get(
@@ -191,22 +200,43 @@ class WebhookServer:
                     hermes_response,
                     chat_id=target_chat_id,
                     user_id=target_user_id,
+                    reply_to=(
+                        update.message.body.mid
+                        if update.message.body and update.message.body.mid
+                        else None
+                    ),
                 )
                 logger.info("MAX send_message payload: %s", max_msg)
                 await self._max.send_message(**max_msg)
+
+            # Turn off typing indicator after response is sent
+            if update.message:
+                try:
+                    await self._max.send_chat_action(
+                        chat_id=update.message.recipient.chat_id,
+                        action="typing_off",
+                    )
+                except Exception:
+                    logger.debug("Failed to send typing_off (non-critical)")
 
             return web.json_response({"ok": True})
 
         except HermesClientError as e:
             logger.error("Hermes error: %s", e)
+            if typing_task:
+                typing_task.cancel()
             return web.json_response({"ok": True, "hermes_error": str(e)})
 
         except MAXApiError as e:
             logger.error("MAX API error sending response: %s", e)
+            if typing_task:
+                typing_task.cancel()
             return web.json_response({"ok": True, "max_error": str(e)})
 
         except Exception as e:
             logger.exception("Unexpected error processing update: %s", e)
+            if typing_task:
+                typing_task.cancel()
             return web.json_response({"ok": True, "error": str(e)})
 
     async def _download_attachments(
@@ -343,3 +373,23 @@ class WebhookServer:
                 k: v for k, v in self._processed_ids.items() if v > cutoff
             }
         return False
+
+    async def _keep_typing(self, chat_id: int) -> None:
+        """Keep sending typing_on every ~3 seconds until cancelled.
+
+        The MAX 'typing_on' action only lasts ~5–10 seconds.
+        This loop re-sends it periodically so the user sees
+        continuous feedback while Hermes prepares the answer.
+        """
+        try:
+            while True:
+                await self._max.send_chat_action(
+                    chat_id=chat_id, action="typing_on"
+                )
+                await asyncio.sleep(3)
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            logger.warning(
+                "Failed to send keep-typing indicator", exc_info=True
+            )
