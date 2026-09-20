@@ -373,3 +373,11 @@ MIT License. См. [LICENSE](LICENSE).
   <sub>🎨 Designed by <a href="https://br-design.ru/">BR-DESIGN</a></sub>
 
 </div>
+
+
+---
+<div align="center">
+
+  <sub>🇷🇺 Опенсорс — **Поддержи наш продукт** · <a href="https://br-design.ru/">BR-DESIGN</a></sub>
+
+</div>
