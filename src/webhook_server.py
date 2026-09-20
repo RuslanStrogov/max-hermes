@@ -129,6 +129,12 @@ class WebhookServer:
                 )
                 return web.json_response({"ok": True, "ignored": True})
 
+        # Handle bot commands directly (before forwarding to Hermes)
+        command_response = await self._handle_bot_command(update)
+        if command_response:
+            logger.info("Handled command directly: %s", command_response["cmd"])
+            return command_response["http_response"]
+
         # Convert and forward to Hermes
         hermes_payload = self._converter.max_update_to_message(update)
 
@@ -261,6 +267,59 @@ class WebhookServer:
                 )
 
         return content_items
+
+    # ── Bot Commands ──────────────────────────────────────────────────────────
+
+    COMMAND_HANDLERS = {
+        "/start": "👋 **Привет!** Я — MAX Bridge Bot, соединяю MAX и Hermes.\n\nПиши любой вопрос или задачу — я передам её Hermes AI.\n\nКоманды:\n• `/help` — помощь\n• `/about` — информация",
+        "/help": (
+            "ℹ️ **Помощь по MAX Bridge Bot**\n\n"
+            "Этот бот — мост между MAX и Hermes AI.\n\n"
+            "**Как пользоваться:**\n"
+            "Просто пиши сообщение, и я передам его Hermes.\n"
+            "Я поддерживаю текст, изображения, аудио и файлы.\n\n"
+            "**Команды:**\n"
+            "• `/start` — начать диалог\n"
+            "• `/help` — эта справка\n"
+            "• `/about` — информация о боте"
+        ),
+        "/about": (
+            "🤖 **MAX Bridge Bot**\n\n"
+            "Версия: 1.0.0\n"
+            "Платформа: Hermes AI + MAX\n\n"
+            "Разработано специально для интеграции MAX и Hermes.\n"
+            "Использует технологии: асинхронный Python, aiohttp, MAX API."
+        ),
+    }
+
+    async def _handle_bot_command(self, update: MAXUpdate) -> Optional[dict]:
+        """Handle known bot commands like /start, /help, /about.
+
+        Returns a dict with 'cmd' and 'http_response' if handled,
+        or None if the message is not a command.
+        """
+        if not update.message:
+            return None
+
+        text = (update.message.body.text or "").strip().lower()
+
+        # Check if the message is a known bot command
+        handler_text = self.COMMAND_HANDLERS.get(text)
+        if not handler_text:
+            return None
+
+        recipient = update.message.recipient
+        sender = update.message.sender
+        target_chat_id = recipient.chat_id
+
+        # Send the handler response back to MAX
+        await self._max.send_message(
+            chat_id=target_chat_id,
+            user_id=None,
+            text=handler_text,
+            format="markdown",
+        )
+        return {"cmd": text, "http_response": web.json_response({"ok": True})}
 
     def _verify_signature(self, request: web.Request) -> bool:
         """Verify HMAC signature from MAX webhook.
