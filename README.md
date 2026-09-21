@@ -33,6 +33,20 @@
 
 </div>
 
+<br>
+<video src="assets/best_video.mp4" controls width="100%" loop autoplay muted></video>
+<br>
+<p align="center"><em>AI-generated showcase animation</em></p>
+<br>
+
+<details>
+<summary>🎬 Ещё демо</summary>
+<br>
+<video src="assets/demo_video_2.mp4" controls width="100%" loop autoplay muted></video>
+<br>
+<p align="center"><em>AI-generated showcase animation</em></p>
+</details>
+
 ---
 
 ## 📋 Содержание
