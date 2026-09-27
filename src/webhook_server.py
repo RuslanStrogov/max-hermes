@@ -210,6 +210,28 @@ class WebhookServer:
                 "message", hermes_response.get("text", "")
             )
 
+            # Truncate if exceeds MAX API 4000-char limit
+            MAX_TEXT_LIMIT = 3950  # safe margin
+            if len(agent_text) > MAX_TEXT_LIMIT:
+                truncated = True
+                agent_text = agent_text[:MAX_TEXT_LIMIT]
+                # Try to break at a sentence boundary
+                for splitter in ("\n\n", "\n", ". ", "! ", "? "):
+                    idx = agent_text.rfind(splitter)
+                    if idx > 3000:
+                        agent_text = agent_text[: idx + len(splitter)]
+                        break
+                agent_text += (
+                    f"\n\n*[Сообщение сокращено — "
+                    f"было {len(hermes_response.get('message', hermes_response.get('text', '')))} "
+                    f"символов, макс. {MAX_TEXT_LIMIT}]"
+                )
+                logger.info(
+                    "Response truncated from %d to %d chars for MAX API limit",
+                    len(hermes_response.get("message", hermes_response.get("text", ""))),
+                    len(agent_text),
+                )
+
             if agent_text and update.message:
                 recipient = update.message.recipient
                 sender = update.message.sender
@@ -330,9 +352,26 @@ class WebhookServer:
         return content_items
 
     # ── Bot Commands ──────────────────────────────────────────────────────────
+    #
+    # Команды разделены на две категории:
+    #
+    #   1. VISIBLE_COMMANDS — отображаются в меню "/" (регистрируются через MAX API).
+    #   2. INVISIBLE_COMMANDS — скрытые: работают по вводу, но в меню не показываются.
+    #
+    # Для регистрации через MAX API используется список REGISTERED_COMMANDS
+    # (имена без слеша, с кратким описанием).
+    #
+    # Telegram-стиль: все обрабатываемые команды живут в едином словаре,
+    # а видимость в меню определяется отдельным списком.
 
-    COMMAND_HANDLERS = {
-        "/start": "👋 **Привет!** Я — MAX Bridge Bot, соединяю MAX и Hermes.\n\nПиши любой вопрос или задачу — я передам её Hermes AI.\n\nКоманды:\n• `/help` — помощь\n• `/about` — информация",
+    VISIBLE_COMMANDS: dict[str, str] = {
+        "/start": (
+            "👋 **Привет!** Я — MAX Bridge Bot, соединяю MAX и Hermes.\n\n"
+            "Пиши любой вопрос или задачу — я передам её Hermes AI.\n\n"
+            "**Команды:**\n"
+            "• `/help` — помощь\n"
+            "• `/about` — информация"
+        ),
         "/help": (
             "ℹ️ **Помощь по MAX Bridge Bot**\n\n"
             "Этот бот — мост между MAX и Hermes AI.\n\n"
@@ -342,7 +381,12 @@ class WebhookServer:
             "**Команды:**\n"
             "• `/start` — начать диалог\n"
             "• `/help` — эта справка\n"
-            "• `/about` — информация о боте"
+            "• `/about` — информация о боте\n\n"
+            "**Скрытые команды:**\n"
+            "• `/id` — информация об ID чата и пользователя\n"
+            "• `/ping` — проверка соединения\n"
+            "• `/stats` — статистика моста\n"
+            "• `/admin` — панель администратора"
         ),
         "/about": (
             "🤖 **MAX Bridge Bot**\n\n"
@@ -353,31 +397,110 @@ class WebhookServer:
         ),
     }
 
-    async def _handle_bot_command(self, update: MAXUpdate) -> Optional[dict]:
-        """Handle known bot commands like /start, /help, /about.
+    INVISIBLE_COMMANDS: dict[str, str] = {
+        "/ping": "🏓 Понг! Всё работает.",
+    }
 
-        Returns a dict with 'cmd' and 'http_response' if handled,
-        or None if the message is not a command.
+    # ── Команды, регистрируемые в меню через MAX API ────────────────────────
+
+    REGISTERED_COMMANDS: list[dict[str, str]] = [
+        {"name": "start", "description": "Начать диалог с ботом"},
+        {"name": "help", "description": "Помощь и информация о боте"},
+        {"name": "about", "description": "О боте и его возможностях"},
+    ]
+
+    # ── Обработчики невидимых команд, требующих динамического ответа ─────────
+    #
+    # Если команде нужно подставить данные (ID, статистику и т.п.),
+    # добавляем сюда функцию-обработчик. Ключ — команда со слешем.
+
+    _INVISIBLE_HANDLERS: dict[str, str] = {
+        "/id": "_cmd_id",
+        "/stats": "_cmd_stats",
+        "/admin": "_cmd_admin",
+    }
+
+    async def _cmd_id(self, update: MAXUpdate) -> str:
+        """Обработчик /id — показывает ID чата и пользователя."""
+        chat_id = update.message.recipient.chat_id if update.message else "?"
+        user_id = update.message.sender.user_id if update.message else "?"
+        display = update.message.sender.display_name if update.message else "?"
+        return (
+            f"🔢 **ID:**\n\n"
+            f"Chat ID: `{chat_id}`\n"
+            f"User ID: `{user_id}`\n"
+            f"Username: `{display}`"
+        )
+
+    async def _cmd_stats(self, update: MAXUpdate) -> str:
+        """Обработчик /stats — статистика моста."""
+        if not hasattr(self, "_cmd_stats_counter"):
+            self._cmd_stats_counter = 0
+        self._cmd_stats_counter += 1
+        return (
+            f"📊 **Статистика моста**\n\n"
+            f"Запросов к /stats: `{self._cmd_stats_counter}`\n"
+            f"Обработано команд (с начала сессии): хранение не реализовано"
+        )
+
+    async def _cmd_admin(self, update: MAXUpdate) -> str:
+        """Обработчик /admin — панель администратора."""
+        user_id = update.message.sender.user_id if update.message else 0
+        if self._config.allowed_users and user_id in self._config.allowed_users:
+            return (
+                "⚙️ **Панель администратора**\n\n"
+                "• `Uptime` — (будет реализовано)\n"
+                "• `Logs` — (будет реализовано)\n"
+                "• `Config` — (будет реализовано)"
+            )
+        return "⛔ Доступ запрещён. Эта команда только для администраторов."
+
+    # ── Общий метод обработки команд ─────────────────────────────────────────
+
+    async def _handle_bot_command(self, update: MAXUpdate) -> Optional[dict]:
+        """Обработать команду бота (видимую или невидимую).
+
+        Сначала проверяет VISIBLE_COMMANDS, затем INVISIBLE_COMMANDS,
+        затем динамические обработчики (_INVISIBLE_HANDLERS).
+
+        Возвращает dict с 'cmd' и 'http_response' или None,
+        если сообщение не является командой.
         """
         if not update.message:
             return None
 
         text = (update.message.body.text or "").strip().lower()
-
-        # Check if the message is a known bot command
-        handler_text = self.COMMAND_HANDLERS.get(text)
-        if not handler_text:
-            return None
-
         recipient = update.message.recipient
-        sender = update.message.sender
         target_chat_id = recipient.chat_id
+
+        response_text: Optional[str] = None
+
+        # 1. Visible commands (static text)
+        response_text = self.VISIBLE_COMMANDS.get(text)
+
+        # 2. Invisible commands (static text)
+        if response_text is None:
+            response_text = self.INVISIBLE_COMMANDS.get(text)
+
+        # 3. Invisible handlers (dynamic — требуют логики)
+        if response_text is None and text in self._INVISIBLE_HANDLERS:
+            handler_name = self._INVISIBLE_HANDLERS[text]
+            handler = getattr(self, handler_name, None)
+            if handler:
+                try:
+                    response_text = await handler(update)
+                except Exception as e:
+                    logger.error("Command handler %s error: %s", text, e)
+                    response_text = f"⚠️ Ошибка выполнения команды `{text}`."
+
+        if response_text is None:
+            return None
 
         # Send the handler response back to MAX
         await self._max.send_message(
             chat_id=target_chat_id,
             user_id=None,
-            text=handler_text,
+            text=response_text,
             format="markdown",
         )
         return {"cmd": text, "http_response": web.json_response({"ok": True})}
