@@ -39,10 +39,12 @@ class WebhookServer:
         config: Config,
         max_client: MAXClient,
         hermes_client: HermesClient,
+        bot_username: str = "",
     ):
         self._config = config
         self._max = max_client
         self._hermes = hermes_client
+        self._bot_username = bot_username
         self._converter = MessageConverter()
         self._app = web.Application()
         self._app["hermes_client"] = hermes_client
@@ -135,6 +137,35 @@ class WebhookServer:
         if command_response:
             logger.info("Handled command directly: %s", command_response["cmd"])
             return command_response["http_response"]
+
+        # ── Group chat filtering ─────────────────────────────────────────────
+        # Only respond in groups when explicitly mentioned (@bot_username)
+        # Groups have negative chat_id (e.g. -69536335178338)
+
+        if update.message and update.message.recipient.chat_id < 0:
+            # 1. Ignore messages from other bots (prevents bot loops)
+            if update.message.sender.is_bot:
+                logger.info(
+                    "Ignoring bot message in group %d from %s — skipping",
+                    update.message.recipient.chat_id,
+                    update.message.sender.display_name,
+                )
+                return web.json_response({"ok": True, "ignored": "bot_message"})
+
+            # 2. Only respond if @bot_username is in the message text
+            text = (update.message.body.text or "").strip()
+            if self._bot_username and f"@{self._bot_username.lower()}" not in text.lower():
+                logger.info(
+                    "Bot not mentioned in group %d — ignoring. text=%r",
+                    update.message.recipient.chat_id,
+                    text[:100],
+                )
+                return web.json_response({"ok": True, "ignored": "not_mentioned"})
+            elif not self._bot_username:
+                logger.warning(
+                    "bot_username not set — cannot check mention in group %d",
+                    update.message.recipient.chat_id,
+                )
 
         # Convert and forward to Hermes
         hermes_payload = self._converter.max_update_to_message(update)
