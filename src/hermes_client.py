@@ -86,7 +86,7 @@ class HermesClient:
             self._hermes_bin, "chat", "-q", full_message, "-Q",
             "--source", "max-bridge",
             "--ignore-rules",
-            "--max-turns", "3",
+            "--max-turns", "20",
         ]
 
         if self._model:
