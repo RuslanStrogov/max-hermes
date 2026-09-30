@@ -409,6 +409,7 @@ MIT License. См. [LICENSE](LICENSE).
 | Проект | Описание |
 |--------|----------|
 | [MAX Hermes Plugin](https://github.com/RuslanStrogov/max-hermes-plugin) | Нативный платформенный плагин для Hermes Gateway. Прямая интеграция MAX без моста. |
+| [MAX OpenClaw](https://github.com/RuslanStrogov/max-openclaw) | MAX Channel Plugin для OpenClaw — TypeScript, Vitest, CI/CD |
 | [MAX Shared](https://github.com/RuslanStrogov/max-shared) | Общая библиотека: MAXClient, модели, конвертер, markdown |
 
 ## 📢 Пресс-релизы
