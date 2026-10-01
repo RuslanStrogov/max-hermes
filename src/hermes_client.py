@@ -21,7 +21,9 @@ class HermesClientError(Exception):
 class HermesClient:
     """Sends messages to Hermes Agent CLI and captures responses."""
 
-    SESSION_STORE_PATH = Path.home() / ".hermes" / "max-bridge-sessions.json"
+    # Systemd unit has ProtectHome=read-only, so we must store sessions
+    # inside a ReadWritePaths-whitelisted subdirectory.
+    SESSION_STORE_PATH = Path.home() / ".hermes" / "sessions" / "max-bridge.json"
     # Prefixes used by Hermes CLI on stdout that should be stripped from response
     _SESSION_LINE_PREFIXES = {
         "Session:",
@@ -74,11 +76,16 @@ class HermesClient:
             self._sessions = {}
 
     def _save_sessions(self) -> None:
-        """Persist session_id → chat_id mapping to disk."""
-        self.SESSION_STORE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        tmp = self.SESSION_STORE_PATH.with_suffix(".tmp.json")
-        tmp.write_text(json.dumps(self._sessions, indent=2, ensure_ascii=False))
-        tmp.replace(self.SESSION_STORE_PATH)
+        """Persist session_id → chat_id mapping to disk (best-effort)."""
+        try:
+            self.SESSION_STORE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.SESSION_STORE_PATH.with_suffix(".tmp.json")
+            tmp.write_text(json.dumps(self._sessions, indent=2, ensure_ascii=False))
+            tmp.replace(self.SESSION_STORE_PATH)
+        except OSError as exc:
+            logger.warning(
+                "Failed to persist sessions (non-fatal): %s", exc
+            )
 
     def _get_session_id(self, chat_id: str) -> Optional[str]:
         """Return saved session_id for this chat, or None."""
