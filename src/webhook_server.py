@@ -212,8 +212,13 @@ class WebhookServer:
                     hermes_payload["content_items"] = content_items
 
             # Send to Hermes with role instructions
-            hermes_payload["system_prompt"] = DEFAULT_SYSTEM_PROMPT
-            hermes_response = await self._hermes.send_message(**hermes_payload)
+            hermes_response_text = await self._hermes.send_message(
+                message=hermes_payload.get("message", ""),
+                chat_id=hermes_payload.get("chat_id", ""),
+                user_name=hermes_payload.get("user_name", ""),
+                attachments=hermes_payload.get("attachments"),
+                reply_to=hermes_payload.get("reply_to"),
+            )
 
             # Cancel keep-typing – answer is ready
             if typing_task:
@@ -221,9 +226,7 @@ class WebhookServer:
                 typing_task = None
 
             # Send response back to MAX
-            agent_text = hermes_response.get(
-                "message", hermes_response.get("text", "")
-            )
+            agent_text = hermes_response_text or ""
 
             # Truncate if exceeds MAX API 4000-char limit
             MAX_TEXT_LIMIT = 3950  # safe margin
@@ -238,12 +241,12 @@ class WebhookServer:
                         break
                 agent_text += (
                     f"\n\n*[Сообщение сокращено — "
-                    f"было {len(hermes_response.get('message', hermes_response.get('text', '')))} "
+                    f"было {len(hermes_response_text)} "
                     f"символов, макс. {MAX_TEXT_LIMIT}]"
                 )
                 logger.info(
                     "Response truncated from %d to %d chars for MAX API limit",
-                    len(hermes_response.get("message", hermes_response.get("text", ""))),
+                    len(hermes_response_text),
                     len(agent_text),
                 )
 
@@ -268,7 +271,7 @@ class WebhookServer:
                 )
 
                 max_msg = MessageConverter.response_to_max_message(
-                    hermes_response,
+                    {"message": hermes_response_text},
                     chat_id=target_chat_id,
                     user_id=target_user_id,
                     reply_to=(
