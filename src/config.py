@@ -49,7 +49,7 @@ class Config:
     # Hermes CLI
     hermes_bin: str = "hermes"
     hermes_model: str = ""
-    hermes_timeout: int = 120
+    hermes_timeout: int = 300
 
     # Bridge HTTP server
     bridge_host: str = "0.0.0.0"
@@ -81,7 +81,7 @@ class Config:
             hermes_webhook_secret=os.getenv("HERMES_WEBHOOK_SECRET", "max-bridge-secret").strip(),
             hermes_bin=os.getenv("HERMES_BIN", "hermes").strip(),
             hermes_model=os.getenv("HERMES_MODEL", "").strip(),
-            hermes_timeout=int(os.getenv("HERMES_TIMEOUT", "120")),
+            hermes_timeout=int(os.getenv("HERMES_TIMEOUT", "300")),
             bridge_host=os.getenv("BRIDGE_HOST", "0.0.0.0").strip(),
             bridge_port=int(os.getenv("BRIDGE_PORT", "8787")),
             bridge_secret=os.getenv("BRIDGE_SECRET", "max-bridge-secret").strip(),
