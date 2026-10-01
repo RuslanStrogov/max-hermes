@@ -26,8 +26,13 @@ DEDUP_MAX_SIZE = 1000
 
 # Default system prompt / role for the bridge bot
 DEFAULT_SYSTEM_PROMPT = (
-    "Ты — MAX Bridge Bot. Общайся на русском. "
-    "Будь полезным и отвечай по существу."
+    "Ты — Яша Бот, семейный помощник. "
+    "Общайся на русском. "
+    "Будь тёплым, добрым и терпеливым. "
+    "В группе есть пожилые люди и дети — "
+    "отвечай просто, понятно, с заботой. "
+    "Помогай с вопросами по дому, учёбе, "
+    "советами для всей семьи."
 )
 
 
@@ -139,8 +144,9 @@ class WebhookServer:
             return command_response["http_response"]
 
         # ── Group chat filtering ─────────────────────────────────────────────
-        # Only respond in groups when explicitly mentioned (@bot_username)
-        # Groups have negative chat_id (e.g. -69536335178338)
+        # For private family group — respond to ALL messages, no @mention needed.
+        # Elderly users and children won't use @bot_username, so we skip mention check.
+        # The bot is only accessible to group members — no spam risk.
 
         if update.message and update.message.recipient.chat_id < 0:
             # 1. Ignore messages from other bots (prevents bot loops)
@@ -152,20 +158,14 @@ class WebhookServer:
                 )
                 return web.json_response({"ok": True, "ignored": "bot_message"})
 
-            # 2. Only respond if @bot_username is in the message text
-            text = (update.message.body.text or "").strip()
-            if self._bot_username and f"@{self._bot_username.lower()}" not in text.lower():
-                logger.info(
-                    "Bot not mentioned in group %d — ignoring. text=%r",
-                    update.message.recipient.chat_id,
-                    text[:100],
-                )
-                return web.json_response({"ok": True, "ignored": "not_mentioned"})
-            elif not self._bot_username:
-                logger.warning(
-                    "bot_username not set — cannot check mention in group %d",
-                    update.message.recipient.chat_id,
-                )
+            # 2. Family group: respond to all human messages.
+            #    Skip @mention check so anyone can just write without
+            #    knowing the bot's username.
+            logger.info(
+                "Responding to message in group %d from %s (no @mention required)",
+                update.message.recipient.chat_id,
+                update.message.sender.display_name,
+            )
 
         # Convert and forward to Hermes
         hermes_payload = self._converter.max_update_to_message(update)
@@ -229,7 +229,7 @@ class WebhookServer:
             agent_text = hermes_response_text or ""
 
             # Truncate if exceeds MAX API 4000-char limit
-            MAX_TEXT_LIMIT = 3950  # safe margin
+            MAX_TEXT_LIMIT = 3850  # safe margin (with ~70-char suffix)
             if len(agent_text) > MAX_TEXT_LIMIT:
                 truncated = True
                 agent_text = agent_text[:MAX_TEXT_LIMIT]
@@ -244,6 +244,9 @@ class WebhookServer:
                     f"было {len(hermes_response_text)} "
                     f"символов, макс. {MAX_TEXT_LIMIT}]"
                 )
+                # Final safety clamp — ensure text fits in MAX's 4000-char limit
+                if len(agent_text) > 3950:
+                    agent_text = agent_text[:3950] + "\n\n*[сокращено]*"
                 logger.info(
                     "Response truncated from %d to %d chars for MAX API limit",
                     len(hermes_response_text),
@@ -268,7 +271,7 @@ class WebhookServer:
                 )
 
                 max_msg = MessageConverter.response_to_max_message(
-                    {"message": hermes_response_text},
+                    {"message": agent_text},
                     chat_id=target_chat_id,
                     user_id=target_user_id,
                     reply_to=(
@@ -404,34 +407,33 @@ class WebhookServer:
 
     VISIBLE_COMMANDS: dict[str, str] = {
         "/start": (
-            "👋 **Привет!** Я — MAX Bridge Bot, соединяю MAX и Hermes.\n\n"
-            "Пиши любой вопрос или задачу — я передам её Hermes AI.\n\n"
+            "👋 **Привет!** Я — **Яша Бот**, семейный помощник.\n\n"
+            "Можете писать мне любые вопросы — по дому, учёбе, "
+            "новостям или просто поболтать.\n\n"
             "**Команды:**\n"
             "• `/help` — помощь\n"
-            "• `/about` — информация"
+            "• `/about` — обо мне"
         ),
         "/help": (
-            "ℹ️ **Помощь по MAX Bridge Bot**\n\n"
-            "Этот бот — мост между MAX и Hermes AI.\n\n"
-            "**Как пользоваться:**\n"
-            "Просто пиши сообщение, и я передам его Hermes.\n"
-            "Я поддерживаю текст, изображения, аудио и файлы.\n\n"
+            "🫂 **Помощь по Яше**\n\n"
+            "Я — **Яша Бот**, ваш семейный AI-помощник.\n\n"
+            "**Как писать:**\n"
+            "Просто напишите мне сообщение — я отвечу.\n"
+            "Можно текст, картинки, файлы, голосовые.\n\n"
             "**Команды:**\n"
-            "• `/start` — начать диалог\n"
+            "• `/start` — приветствие\n"
             "• `/help` — эта справка\n"
-            "• `/about` — информация о боте\n\n"
+            "• `/about` — обо мне боте\n\n"
             "**Скрытые команды:**\n"
             "• `/id` — информация об ID чата и пользователя\n"
-            "• `/ping` — проверка соединения\n"
-            "• `/stats` — статистика моста\n"
-            "• `/admin` — панель администратора"
+            "• `/ping` — проверка соединения"
         ),
         "/about": (
-            "🤖 **MAX Bridge Bot**\n\n"
-            "Версия: 1.0.0\n"
-            "Платформа: Hermes AI + MAX\n\n"
-            "Разработано специально для интеграции MAX и Hermes.\n"
-            "Использует технологии: асинхронный Python, aiohttp, MAX API."
+            "🤖 **Яша Бот**\n\n"
+            "Простой и тёплый семейный помощник.\n"
+            "Работаю на платформе MAX с использованием AI.\n\n"
+            "Создан с ❤️ для семьи.\n"
+            "Версия: 1.0.0"
         ),
     }
 
