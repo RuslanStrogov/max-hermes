@@ -176,6 +176,21 @@ class WebhookServer:
             )
             return web.json_response({"ok": True, "skipped": True})
 
+        # Skip empty / whitespace-only messages (prevents hermes spam on empty edits)
+        # Keep messages with attachments even if text is empty (e.g., image-only)
+        has_attachments = bool(
+            update.message
+            and update.message.body
+            and update.message.body.attachments
+        )
+        message_text = (hermes_payload.get("message") or "").strip()
+        if not message_text and not has_attachments:
+            logger.info(
+                "Skipping empty message from %s — no text content",
+                update.message.sender.display_name if update.message else "unknown",
+            )
+            return web.json_response({"ok": True, "skipped": "empty_message"})
+
         # Initialise keep-typing handle before try so except blocks can cancel it
         typing_task: Optional[asyncio.Task] = None
 
@@ -236,11 +251,14 @@ class WebhookServer:
                 recipient = update.message.recipient
                 sender = update.message.sender
 
-                # MAX API requires chat_id for sending messages.
-                # For group chats: use recipient.chat_id.
-                # For DM (dialog): recipient.chat_id == sender.user_id (the chat owner).
-                target_chat_id = recipient.chat_id
-                target_user_id = None
+                # Determine target: for group chats (negative chat_id) use chat_id,
+                # for DMs (positive chat_id) use user_id
+                if recipient.chat_id < 0:
+                    target_chat_id = recipient.chat_id
+                    target_user_id = None
+                else:
+                    target_chat_id = None
+                    target_user_id = recipient.chat_id
 
                 logger.info(
                     "Sending response to MAX: chat_id=%s, user_id=%s, text_len=%d",
@@ -278,18 +296,38 @@ class WebhookServer:
             logger.error("Hermes error: %s", e)
             if typing_task:
                 typing_task.cancel()
+            # Turn off typing indicator (best-effort, MAX may reject)
+            await self._try_stop_typing(update)
+            # Send error notification to user
+            if update.message:
+                try:
+                    await self._max.send_message(
+                        chat_id=update.message.recipient.chat_id if update.message.recipient.chat_id < 0 else None,
+                        user_id=None if update.message.recipient.chat_id < 0 else update.message.recipient.chat_id,
+                        text=(
+                            "⚠️ Ошибка обработки запроса.\n"
+                            f"`{e}`\n\n"
+                            "Попробуй переформулировать вопрос или повторить позже."
+                        ),
+                        format="markdown",
+                        reply_to=update.message.body.mid if update.message.body and update.message.body.mid else None,
+                    )
+                except Exception:
+                    logger.exception("Failed to send error notification to user")
             return web.json_response({"ok": True, "hermes_error": str(e)})
 
         except MAXApiError as e:
             logger.error("MAX API error sending response: %s", e)
             if typing_task:
                 typing_task.cancel()
+            await self._try_stop_typing(update)
             return web.json_response({"ok": True, "max_error": str(e)})
 
         except Exception as e:
             logger.exception("Unexpected error processing update: %s", e)
             if typing_task:
                 typing_task.cancel()
+            await self._try_stop_typing(update)
             return web.json_response({"ok": True, "error": str(e)})
 
     async def _download_attachments(
@@ -407,6 +445,7 @@ class WebhookServer:
         {"name": "start", "description": "Начать диалог с ботом"},
         {"name": "help", "description": "Помощь и информация о боте"},
         {"name": "about", "description": "О боте и его возможностях"},
+        {"name": "id", "description": "Показать ID чата и пользователя"},
     ]
 
     # ── Обработчики невидимых команд, требующих динамического ответа ─────────
@@ -498,8 +537,8 @@ class WebhookServer:
 
         # Send the handler response back to MAX
         await self._max.send_message(
-            chat_id=target_chat_id,
-            user_id=None,
+            chat_id=target_chat_id if target_chat_id < 0 else None,
+            user_id=None if target_chat_id < 0 else target_chat_id,
             text=response_text,
             format="markdown",
         )
@@ -547,3 +586,19 @@ class WebhookServer:
             logger.warning(
                 "Failed to send keep-typing indicator", exc_info=True
             )
+
+    async def _try_stop_typing(self, update) -> None:
+        """Best-effort typing_off after an error.
+
+        MAX API often rejects typing_off (HTTP 400 — known limitation),
+        but we still try so the indicator has a chance to clear.
+        """
+        if not update or not update.message:
+            return
+        try:
+            await self._max.send_chat_action(
+                chat_id=update.message.recipient.chat_id,
+                action="typing_off",
+            )
+        except Exception:
+            logger.debug("Failed to send typing_off after error (non-critical)")
