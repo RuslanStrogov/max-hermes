@@ -254,14 +254,11 @@ class WebhookServer:
                 recipient = update.message.recipient
                 sender = update.message.sender
 
-                # Determine target: for group chats (negative chat_id) use chat_id,
-                # for DMs (positive chat_id) use user_id
-                if recipient.chat_id < 0:
-                    target_chat_id = recipient.chat_id
-                    target_user_id = None
-                else:
-                    target_chat_id = None
-                    target_user_id = recipient.chat_id
+                # Use chat_id for all targets — works for both DMs and groups.
+                # MAX API also accepts user_id for DMs, but recipient.chat_id
+                # is the chat's ID, not the user's — never map chat_id to user_id.
+                target_chat_id = recipient.chat_id
+                target_user_id = None
 
                 logger.info(
                     "Sending response to MAX: chat_id=%s, user_id=%s, text_len=%d",
@@ -305,8 +302,8 @@ class WebhookServer:
             if update.message:
                 try:
                     await self._max.send_message(
-                        chat_id=update.message.recipient.chat_id if update.message.recipient.chat_id < 0 else None,
-                        user_id=None if update.message.recipient.chat_id < 0 else update.message.recipient.chat_id,
+                        chat_id=update.message.recipient.chat_id,
+                        user_id=None,
                         text=(
                             "⚠️ Ошибка обработки запроса.\n"
                             f"`{e}`\n\n"
