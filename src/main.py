@@ -177,7 +177,7 @@ async def main() -> None:
     )
     app = server.app
 
-    bridge_url = "https://max.ai.strogov.com/webhook"
+    bridge_url = config.bridge_public_url or f"http://localhost:{config.bridge_port}/webhook"
     try:
         await setup_max_webhook(max_client, bridge_url)
     except Exception as e:
