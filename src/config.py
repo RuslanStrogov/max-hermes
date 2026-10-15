@@ -55,6 +55,9 @@ class Config:
     bridge_host: str = "0.0.0.0"
     bridge_port: int = 8787
     bridge_secret: str = "max-bridge-secret"
+    # Public URL of the bridge, used to register the MAX webhook.
+    # Empty = fall back to http://localhost:<bridge_port>/webhook (Long Polling / local).
+    bridge_public_url: str = ""
 
     # Logging
     log_level: str = "INFO"
@@ -85,6 +88,7 @@ class Config:
             bridge_host=os.getenv("BRIDGE_HOST", "0.0.0.0").strip(),
             bridge_port=int(os.getenv("BRIDGE_PORT", "8787")),
             bridge_secret=os.getenv("BRIDGE_SECRET", "max-bridge-secret").strip(),
+            bridge_public_url=os.getenv("BRIDGE_PUBLIC_URL", "").strip(),
             log_level=os.getenv("LOG_LEVEL", "INFO").strip(),
             log_file=os.getenv("LOG_FILE", "/var/log/max-bridge/bridge.log").strip(),
             download_dir=os.getenv("DOWNLOAD_DIR", "/tmp/max-bridge/downloads").strip(),
