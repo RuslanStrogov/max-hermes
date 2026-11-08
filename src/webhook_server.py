@@ -45,11 +45,13 @@ class WebhookServer:
         max_client: MAXClient,
         hermes_client: HermesClient,
         bot_username: str = "",
+        bot_user_id: int = 0,
     ):
         self._config = config
         self._max = max_client
         self._hermes = hermes_client
         self._bot_username = bot_username
+        self._bot_user_id = bot_user_id
         self._converter = MessageConverter()
         self._app = web.Application()
         self._app["hermes_client"] = hermes_client
@@ -121,6 +123,18 @@ class WebhookServer:
             update.message.sender.name if update.message else "N/A",
             update.message.recipient.chat_id if update.message else "N/A",
         )
+
+        # Self-message filter: skip the bot's own messages (prevents loops)
+        if (
+            self._bot_user_id
+            and update.message
+            and update.message.sender.user_id == self._bot_user_id
+        ):
+            logger.info(
+                "Self-msg ignored: user_id=%s == bot_self_id",
+                update.message.sender.user_id,
+            )
+            return web.json_response({"ok": True, "ignored": True})
 
         # Deduplication: extract message ID from raw payload
         raw_msg = data.get("message", {}) if data.get("message") else {}
