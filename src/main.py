@@ -107,6 +107,7 @@ async def create_app(
         max_client=max_client,
         hermes_client=hermes_client,
         bot_username=bot_username,
+        bot_user_id=bot_user_id,
     )
 
     return server.app, max_client, hermes_client
@@ -144,15 +145,18 @@ async def main() -> None:
         timeout=config.hermes_timeout,
     )
 
-    # Fetch bot info to get @username for group mention checks
+    # Fetch bot info to get @username (group mentions) and user_id (self-filter)
     bot_username = ""
+    bot_user_id = 0
     try:
         bot_info = await max_client.get_bot_info()
         bot_username = bot_info.get("username", "")
+        bot_user_id = bot_info.get("user_id", 0)
         logger.info(
-            "Bot info: %s (@%s)",
+            "Bot info: %s (@%s, user_id=%s)",
             bot_info.get("name"),
             bot_username,
+            bot_user_id,
         )
     except Exception as e:
         logger.error("Failed to connect to MAX API: %s", e)
