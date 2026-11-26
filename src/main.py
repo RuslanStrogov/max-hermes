@@ -88,6 +88,7 @@ async def setup_max_webhook(max_client: MAXClient, bridge_url: str) -> None:
 
 async def create_app(
     config: Config,
+    bot_username: str = "",
 ) -> tuple[web.Application, MAXClient, HermesClient]:
     """Create and configure the bridge application."""
     max_client = MAXClient(
@@ -105,6 +106,7 @@ async def create_app(
         config=config,
         max_client=max_client,
         hermes_client=hermes_client,
+        bot_username=bot_username,
     )
 
     return server.app, max_client, hermes_client
@@ -130,20 +132,52 @@ async def main() -> None:
     logger.info("Hermes webhook: %s", config.hermes_webhook_url)
     logger.info("Bridge: %s:%d", config.bridge_host, config.bridge_port)
 
-    app, max_client, hermes_client = await create_app(config)
+    # Create clients
+    max_client = MAXClient(
+        token=config.max_bot_token,
+        base_url=config.max_api_base_url,
+    )
 
+    hermes_client = HermesClient(
+        hermes_bin=config.hermes_bin,
+        model=config.hermes_model,
+        timeout=config.hermes_timeout,
+    )
+
+    # Fetch bot info to get @username for group mention checks
+    bot_username = ""
     try:
         bot_info = await max_client.get_bot_info()
+        bot_username = bot_info.get("username", "")
         logger.info(
             "Bot info: %s (@%s)",
             bot_info.get("name"),
-            bot_info.get("username"),
+            bot_username,
         )
     except Exception as e:
         logger.error("Failed to connect to MAX API: %s", e)
         sys.exit(1)
 
-    bridge_url = "https://REDACTED_WEBHOOK_HOST/webhook"
+    # Register bot commands (menu button) — видимые команды из COMMAND_HANDLERS
+    try:
+        await max_client.set_commands(WebhookServer.REGISTERED_COMMANDS)
+        logger.info(
+            "Bot commands registered successfully: %d commands",
+            len(WebhookServer.REGISTERED_COMMANDS),
+        )
+    except Exception as e:
+        logger.warning("Failed to register bot commands: %s (non-fatal)", e)
+
+    # Create webhook server with real clients + bot_username
+    server = WebhookServer(
+        config=config,
+        max_client=max_client,
+        hermes_client=hermes_client,
+        bot_username=bot_username,
+    )
+    app = server.app
+
+    bridge_url = config.bridge_public_url or f"http://localhost:{config.bridge_port}/webhook"
     try:
         await setup_max_webhook(max_client, bridge_url)
     except Exception as e:

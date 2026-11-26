@@ -7,7 +7,7 @@
 🚀 Открываю исходный код двух проектов для интеграции MAX Bot API с AI-агентом Hermes:
 
 1️⃣ max-hermes — Python-мост (standalone daemon)
-   Webhook → FastAPI → Hermes CLI → ответ в MAX
+   Webhook → aiohttp → Hermes CLI → ответ в MAX
    Docker, systemd, CI/CD, автодеплой
 
 2️⃣ max-hermes-plugin — нативный плагин Hermes Gateway
@@ -24,7 +24,7 @@
 🚀 Open-sourcing two projects integrating MAX Bot API with Hermes AI Agent:
 
 1️⃣ max-hermes — Python bridge (standalone daemon)
-   Webhook → FastAPI → Hermes CLI → reply in MAX
+   Webhook → aiohttp → Hermes CLI → reply in MAX
    Docker, systemd, CI/CD, auto-deploy
 
 2️⃣ max-hermes-plugin — native Hermes Gateway plugin
